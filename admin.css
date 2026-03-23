@@ -1,0 +1,199 @@
+/* Admin-specific styles */
+
+.admin-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+}
+
+.tab-btn.active, .tab-btn:hover {
+  color: var(--white);
+  border-bottom-color: var(--gold);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.admin-section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-section-header h2 {
+  font-family: var(--font-serif);
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  text-transform: uppercase;
+  font-weight: normal;
+  margin: 0;
+}
+
+.btn-admin {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-admin:hover { border-color: var(--gold); color: var(--gold); }
+.btn-admin.danger { border-color: var(--error); color: #c0605a; }
+.btn-admin.primary { border-color: var(--gold); color: var(--gold); }
+
+/* Tables */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.admin-table th {
+  text-align: left;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: normal;
+}
+
+.admin-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--surface);
+  color: #c0bab4;
+  vertical-align: middle;
+}
+
+.admin-table tr:hover td { background: var(--surface); }
+
+.badge-small {
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  display: inline-block;
+}
+
+.badge-small.green { border-color: var(--success); color: #6bbf80; }
+.badge-small.gold { border-color: var(--gold); color: var(--gold); }
+.badge-small.red { border-color: var(--error); color: #c0605a; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.modal-overlay.hidden { display: none; }
+
+.modal-box {
+  background: var(--dark);
+  border: 1px solid var(--border);
+  padding: 2rem;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: normal;
+  margin-bottom: 1.5rem;
+  color: var(--white);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.1rem;
+}
+
+.form-group label {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--white);
+  font-size: 0.85rem;
+  padding: 0.6rem 0.75rem;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { border-color: var(--gold); }
+
+.form-group textarea { min-height: 100px; resize: vertical; }
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+/* Link generator */
+.link-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.75rem 1rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  word-break: break-all;
+  letter-spacing: 0.03em;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.link-box:hover { border-color: var(--gold); }

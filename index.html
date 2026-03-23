@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HWKV · Admin</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- ADMIN LOGIN -->
+  <div id="admin-login" class="screen active">
+    <div class="login-container">
+      <div class="logo-block">
+        <div class="hwkv-mark">HWKV</div>
+        <div class="society-name">Secretariat Access</div>
+      </div>
+      <div class="login-form">
+        <p class="login-instruction">Admin passphrase</p>
+        <input type="password" id="admin-pass-input" placeholder="············" />
+        <div id="admin-login-error" class="error-msg hidden">Access denied.</div>
+        <button onclick="adminLogin()">Enter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PORTAL -->
+  <div id="admin-portal" class="screen">
+    <header>
+      <div class="header-inner">
+        <span class="hwkv-mark small">HWKV</span>
+        <span class="greeting" style="color:var(--gold);font-size:0.6rem;letter-spacing:0.2em">SECRETARIAT</span>
+        <button class="logout-btn" onclick="adminLogout()">↩</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- TABS -->
+      <div class="admin-tabs">
+        <button class="tab-btn active" onclick="showTab('members')">Members</button>
+        <button class="tab-btn" onclick="showTab('tastings')">Tastings</button>
+        <button class="tab-btn" onclick="showTab('messages')">Messages</button>
+        <button class="tab-btn" onclick="showTab('rsvps')">RSVPs</button>
+      </div>
+
+      <!-- MEMBERS TAB -->
+      <div id="tab-members" class="tab-content active">
+        <div class="admin-section-header">
+          <h2>Members</h2>
+          <button class="btn-admin" onclick="openAddMember()">+ Add Member</button>
+        </div>
+        <div id="members-table-container"></div>
+      </div>
+
+      <!-- TASTINGS TAB -->
+      <div id="tab-tastings" class="tab-content">
+        <div class="admin-section-header">
+          <h2>Tastings</h2>
+          <button class="btn-admin" onclick="openAddTasting()">+ New Tasting</button>
+        </div>
+        <div id="tastings-admin-container"></div>
+      </div>
+
+      <!-- MESSAGES TAB -->
+      <div id="tab-messages" class="tab-content">
+        <div class="admin-section-header">
+          <h2>Messages</h2>
+          <button class="btn-admin" onclick="openAddMessage()">+ Post Message</button>
+        </div>
+        <div id="messages-admin-container"></div>
+      </div>
+
+      <!-- RSVPS TAB -->
+      <div id="tab-rsvps" class="tab-content">
+        <div class="admin-section-header">
+          <h2>RSVPs</h2>
+          <select id="tasting-filter" onchange="loadRsvps()" style="background:var(--surface);color:var(--white);border:1px solid var(--border);padding:0.4rem 0.75rem;font-size:0.75rem">
+            <option value="">Select tasting...</option>
+          </select>
+          <button class="btn-admin" id="btn-run-ballot" onclick="runBallot()" style="display:none">Run Ballot</button>
+        </div>
+        <div id="rsvps-admin-container"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal-overlay" class="modal-overlay hidden" onclick="closeModal()">
+    <div id="modal-box" class="modal-box" onclick="event.stopPropagation()">
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
