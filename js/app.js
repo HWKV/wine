@@ -524,7 +524,7 @@ function toggleLanguage() {
 
   // Save preference
   if (currentMember) {
-    sessionStorage.setItem('hwkv_lang_override', lang);
+    localStorage.setItem('hwkv_lang_override', lang);
   }
 
   // Refresh all sections
