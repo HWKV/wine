@@ -116,7 +116,7 @@ async function loadTastings() {
     .select('*, tasting_fee, levy')
     .neq('status', 'completed')
     .order('number', { ascending: true })
-    .limit(5);
+    .limit(3);
 
   if (error || !tastings || tastings.length === 0) {
     container.innerHTML = `<p class="rsvp-status-text" style="color:var(--muted)">${t('noTastings', lang)}</p>`;
@@ -689,7 +689,7 @@ async function loadNominations() {
     return;
   }
 
-  if (existing) {
+  if (existing && existing.status !== 'denied') {
     const statusColor = existing.status === 'approved' ? '#6bbf80' : existing.status === 'denied' ? '#c0605a' : 'var(--muted)';
     const statusText = existing.status === 'approved' ? t('nominationApproved', lang)
       : existing.status === 'denied' ? t('nominationDenied', lang)
@@ -701,7 +701,9 @@ async function loadNominations() {
         <div class="message-body" style="margin-top:0.3rem">${existing.room ? existing.room : ''}</div>
         <div style="margin-top:0.75rem;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:${statusColor}">${statusText}</div>
       </div>`;
-  } else if (currentMember.member_type === 'Founding Member' || currentMember.member_type === 'Owner') {
+  } if (existing?.status === 'denied') {
+      html += `<div style="font-size:0.72rem;color:#c0605a;margin-bottom:0.75rem">Your previous nomination was not approved. You may submit a new one.</div>`;
+    }else if (currentMember.member_type === 'Founding Member' || currentMember.member_type === 'Owner') {
     html += `
       <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">${t('nominationRight', lang)}</p>
       <div id="nom-form-container">
