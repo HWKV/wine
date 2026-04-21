@@ -36,7 +36,7 @@ function showTab(name) {
   if (name === 'messages') loadAdminMessages();
   if (name === 'rsvps') loadTastingFilter();
   if (name === 'finance') initFinanceTab();
-  if (name === 'email') { const k = localStorage.getItem('hwkv_resend_key'); if(k) document.getElementById('resend-key-input').value = k; }
+  if (name === 'email') { const k = localStorage.getItem('hwkv_resend_key');
   if (name === 'vehicles') loadVehicles();
   if (name === 'nominations') loadAdminNominations();
   if (name === 'nominations') loadAdminNominations();
