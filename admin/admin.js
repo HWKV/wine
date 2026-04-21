@@ -201,7 +201,6 @@ async function loadAdminTastings() {
           <span class="badge-small ${t.status === 'open' ? 'green' : t.status === 'completed' ? '' : 'gold'}">${t.status}</span>
           <button class="btn-admin" onclick="openEditTasting('${t.id}')">Edit</button>
           <button class="btn-admin danger" onclick="deleteTasting('${t.id}')">Delete</button>
-          <button class="btn-admin danger" onclick="deleteTasting('${t.id}')">Delete</button>
           <button class="btn-admin" onclick="toggleTastingStatus('${t.id}', '${t.status}')">
             ${t.status === 'upcoming' ? 'Open RSVP' : t.status === 'open' ? 'Close RSVP' : 'Reopen'}
           </button>
