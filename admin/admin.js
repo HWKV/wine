@@ -182,7 +182,7 @@ async function saveMember() {
 
 async function loadAdminTastings() {
   const container = document.getElementById('tastings-admin-container');
-  const { data } = await db.from('tastings').select('*').order('tasting_date');
+  const { data } = await db.from('tastings').select('*').order('number', { ascending: true });
 
   if (!data || data.length === 0) {
     container.innerHTML = '<p style="color:var(--muted);font-size:0.8rem">No tastings yet.</p>';
