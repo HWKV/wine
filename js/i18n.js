@@ -179,7 +179,7 @@ Object.assign(i18n.Eng, {
 Object.assign(i18n.Afr, {
   sectionNominations: 'Nominasies',
   nominationRight: 'As Stigtingslid het u die reg om een kandidaat te nomineer.',
-  nominationUsed: 'U het 'n nominasie ingedien.',
+  nominationUsed: 'U het n nominasie ingedien.',
   nominationPending: 'U nominasie word tans hersien.',
   nominationApproved: 'U nominasie is goedgekeur.',
   nominationDenied: 'U nominasie is nie goedgekeur nie.',
