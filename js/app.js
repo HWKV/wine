@@ -145,6 +145,12 @@ async function loadTastings() {
     return renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee);
   }).join('');
 
+  if (tastings.length >= 3) {
+    container.innerHTML += `<div style="text-align:center;margin-top:1rem">
+      <button class="btn-rsvp secondary" onclick="loadMoreTastings()" id="show-more-btn">${lang === 'Afr' ? 'Wys meer' : 'Show more'}</button>
+    </div>`;
+  }
+
   // Start timers
   tastings.forEach(tasting => {
     if (tasting.rsvp_opens_at && new Date(tasting.rsvp_opens_at) > new Date()) {
@@ -701,9 +707,10 @@ async function loadNominations() {
         <div class="message-body" style="margin-top:0.3rem">${existing.room ? existing.room : ''}</div>
         <div style="margin-top:0.75rem;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:${statusColor}">${statusText}</div>
       </div>`;
-  } if (existing?.status === 'denied') {
+  } else if (currentMember.member_type === 'Founding Member' || currentMember.member_type === 'Owner') {
+    if (existing?.status === 'denied') {
       html += `<div style="font-size:0.72rem;color:#c0605a;margin-bottom:0.75rem">Your previous nomination was not approved. You may submit a new one.</div>`;
-    }else if (currentMember.member_type === 'Founding Member' || currentMember.member_type === 'Owner') {
+    }
     html += `
       <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">${t('nominationRight', lang)}</p>
       <div id="nom-form-container">
@@ -752,4 +759,35 @@ async function submitNomination() {
   });
 
   if (!error) loadNominations();
+}
+
+async function loadMoreTastings() {
+  const container = document.getElementById('tastings-list');
+  const btn = document.getElementById('show-more-btn');
+  if (btn) btn.parentElement.remove();
+
+  const { data: more } = await db
+    .from('tastings')
+    .select('*, tasting_fee, levy')
+    .neq('status', 'completed')
+    .order('number', { ascending: true });
+
+  if (!more) return;
+
+  const tastingIds = more.map(t => t.id);
+  const { data: myRsvps } = await db.from('rsvps').select('*').eq('member_id', currentMember.id).in('tasting_id', tastingIds);
+  const { data: rsvpCounts } = await db.from('rsvps').select('tasting_id, status').in('tasting_id', tastingIds).eq('status', 'confirmed');
+
+  container.innerHTML = more.map(tasting => {
+    const myRsvp = myRsvps?.find(r => r.tasting_id === tasting.id);
+    const confirmedCount = rsvpCounts?.filter(r => r.tasting_id === tasting.id).length || 0;
+    const tastingFee = (tasting.tasting_fee || 0) + (tasting.levy || 0);
+    return renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee);
+  }).join('');
+
+  more.forEach(tasting => {
+    if (tasting.rsvp_opens_at && new Date(tasting.rsvp_opens_at) > new Date()) {
+      startTimer(tasting.id, tasting.rsvp_opens_at);
+    }
+  });
 }
