@@ -39,7 +39,6 @@ function showTab(name) {
   if (name === 'email') { const k = localStorage.getItem('hwkv_resend_key');
   if (name === 'vehicles') loadVehicles();
   if (name === 'nominations') loadAdminNominations();
-  if (name === 'nominations') loadAdminNominations();
 }
 
 // ---- MEMBERS ----
@@ -884,18 +883,7 @@ async function saveEditMessage() {
   loadAdminMessages();
 }
 
-// =============================================
-// DELETE TASTING
-// =============================================
 
-async function deleteTasting(id) {
-  if (!confirm('Delete this tasting? This will also delete all RSVPs for it.')) return;
-  await db.from('rsvps').delete().eq('tasting_id', id);
-  await db.from('tasting_drivers').delete().eq('tasting_id', id);
-  await db.from('tastings').delete().eq('id', id);
-  loadAdminTastings();
-  showToast('Tasting deleted');
-}
 
 // =============================================
 // NOMINATIONS ADMIN
@@ -1062,10 +1050,17 @@ async function clearDeadline() {
   loadAdminNominations();
 }
 
+  // =============================================
+// DELETE TASTING
+// =============================================
+
 async function deleteTasting(id) {
   if (!confirm('Delete this tasting? This will also delete all RSVPs for it.')) return;
+  await db.from('rsvps').delete().eq('tasting_id', id);
+  await db.from('tasting_drivers').delete().eq('tasting_id', id);
   await db.from('tastings').delete().eq('id', id);
   loadAdminTastings();
+  showToast('Tasting deleted');
 }
 
 // =============================================
@@ -1167,6 +1162,7 @@ async function confirmApprove(id) {
   await db.from('nominations').update({
     status: 'approved',
     member_code_assigned: code,
+    member_type_assigned: document.getElementById('approve-type')?.value || 'General',
     admin_notes: notes || null
   }).eq('id', id);
 
