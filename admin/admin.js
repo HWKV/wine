@@ -740,7 +740,6 @@ const BASE_URL = 'https://HWKV.github.io/wine';
 
 document.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('hwkv_resend_key');
-  if (saved) document.getElementById('resend-key-input').value = saved;
 
   document.getElementById('email-recipients')?.addEventListener('change', function() {
     document.getElementById('single-code-group').style.display =
