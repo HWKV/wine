@@ -39,7 +39,6 @@ function showTab(name) {
   if (name === 'email') { const k = localStorage.getItem('hwkv_resend_key'); if(k) document.getElementById('resend-key-input').value = k; }
   if (name === 'vehicles') loadVehicles();
   if (name === 'nominations') loadAdminNominations();
-  if (name === 'nominations') loadAdminNominations();
 }
 
 // ---- MEMBERS ----
