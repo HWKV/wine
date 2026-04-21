@@ -718,7 +718,7 @@ function showNomForm() {
       <div class="car-form">
         <input id="nom-firstname" placeholder="${t('nomFirstName', lang)}" />
         <input id="nom-surname" placeholder="${t('nomSurname', lang)}" />
-        <input id="nom-room" placeholder="${t('nomRoom', lang)}" />
+        <input id="nom-email" type="email" placeholder="${lang === 'Afr' ? 'E-posadres' : 'Email Address'}" />
         <textarea id="nom-motivation" placeholder="${t('nomMotivation', lang)}" style="background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--white);font-family:var(--font-sans);font-size:0.85rem;padding:0.5rem 0;outline:none;resize:vertical;min-height:120px;width:100%"></textarea>
         <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
           <button class="btn-rsvp" onclick="submitNomination()">${t('nomSubmit', lang)}</button>
@@ -732,7 +732,7 @@ function showNomForm() {
 async function submitNomination() {
   const firstName = document.getElementById('nom-firstname').value.trim();
   const surname = document.getElementById('nom-surname').value.trim();
-  const room = document.getElementById('nom-room').value.trim();
+  const email = document.getElementById('nom-email').value.trim();
   const motivation = document.getElementById('nom-motivation').value.trim();
 
   if (!firstName || !surname || !motivation) {
@@ -744,7 +744,7 @@ async function submitNomination() {
     nominated_by: currentMember.id,
     first_name: firstName,
     surname: surname,
-    room: room || null,
+    email: document.getElementById('nom-email').value.trim() || null,
     motivation: motivation,
     status: 'pending'
   });
