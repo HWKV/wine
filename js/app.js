@@ -566,10 +566,11 @@ async function loadNominations() {
   const deadlinePassed = deadline && deadline < new Date();
 
   // Get member's existing nominations
-  const { data: myNoms } = await db.from('nominations')
+  const { data: nominations } = await db
+    .from('nominations')
     .select('*')
-    .eq('nominated_by', currentMember.id)
-    .order('created_at', { ascending: false });
+    .eq('nominated_by', currentMember.id);
+  const existing = nominations && nominations.length > 0 ? nominations[0] : null;
 
   const usedNoms = myNoms?.length || 0;
   const maxNoms = 1; // Each founding member gets 1 nomination
