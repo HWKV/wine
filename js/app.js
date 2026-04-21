@@ -115,7 +115,7 @@ async function loadTastings() {
     .from('tastings')
     .select('*, tasting_fee, levy')
     .neq('status', 'completed')
-    .order('tasting_date', { ascending: true })
+    .order('number', { ascending: true })
     .limit(5);
 
   if (error || !tastings || tastings.length === 0) {
