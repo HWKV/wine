@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HWKV · Admin</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+</head>
+<body>
+
+  <!-- ADMIN LOGIN -->
+  <div id="admin-login" class="screen active">
+    <div class="login-container">
+      <div class="logo-block">
+        <div class="hwkv-mark">HWKV</div>
+        <div class="society-name">Secretariat Access</div>
+      </div>
+      <div class="login-form">
+        <p class="login-instruction">Admin passphrase</p>
+        <input type="password" id="admin-pass-input" placeholder="············" />
+        <div id="admin-login-error" class="error-msg hidden">Access denied.</div>
+        <button onclick="adminLogin()">Enter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PORTAL -->
+  <div id="admin-portal" class="screen">
+    <header>
+      <div class="header-inner">
+        <span class="hwkv-mark small">HWKV</span>
+        <span class="greeting" style="color:var(--gold);font-size:0.6rem;letter-spacing:0.2em">SECRETARIAT</span>
+        <button class="logout-btn" onclick="adminLogout()">↩</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- TABS -->
+      <div class="admin-tabs">
+        <button class="tab-btn active" onclick="showTab('members')">Members</button>
+        <button class="tab-btn" onclick="showTab('tastings')">Tastings</button>
+        <button class="tab-btn" onclick="showTab('messages')">Messages</button>
+        <button class="tab-btn" onclick="showTab('rsvps')">RSVPs</button>
+        <button class="tab-btn" onclick="showTab('finance')">Finance</button>
+        <button class="tab-btn" onclick="showTab('email')">Email</button>
+        <button class="tab-btn" onclick="showTab('vehicles')">Vehicles</button>
+        <button class="tab-btn" onclick="showTab('nominations')">Nominations</button>
+        <button class="tab-btn" onclick="showTab('nominations')">Nominations</button>
+      </div>
+
+      <!-- MEMBERS TAB -->
+      <div id="tab-members" class="tab-content active">
+        <div class="admin-section-header">
+          <h2>Members</h2>
+          <button class="btn-admin" onclick="openAddMember()">+ Add Member</button>
+        </div>
+        <div id="members-table-container"></div>
+      </div>
+
+      <!-- TASTINGS TAB -->
+      <div id="tab-tastings" class="tab-content">
+        <div class="admin-section-header">
+          <h2>Tastings</h2>
+          <button class="btn-admin" onclick="openAddTasting()">+ New Tasting</button>
+        </div>
+        <div id="tastings-admin-container"></div>
+      </div>
+
+      <!-- MESSAGES TAB -->
+      <div id="tab-messages" class="tab-content">
+        <div class="admin-section-header">
+          <h2>Messages</h2>
+          <button class="btn-admin" onclick="openAddMessage()">+ Post Message</button>
+        </div>
+        <div id="messages-admin-container"></div>
+      </div>
+
+      <!-- RSVPS TAB -->
+      <div id="tab-rsvps" class="tab-content">
+        <div class="admin-section-header">
+          <h2>RSVPs</h2>
+          <select id="tasting-filter" onchange="loadRsvps()" style="background:var(--surface);color:var(--white);border:1px solid var(--border);padding:0.4rem 0.75rem;font-size:0.75rem">
+            <option value="">Select tasting...</option>
+          </select>
+          <button class="btn-admin" id="btn-run-ballot" onclick="runBallot()" style="display:none">Run Ballot</button>
+        </div>
+        <div id="rsvps-admin-container"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- FINANCE TAB -->
+  <div id="tab-finance" class="tab-content">
+    <div class="admin-section-header">
+      <h2>Finance</h2>
+      <select id="finance-tasting-filter" onchange="loadFinance()" style="background:var(--surface);color:var(--white);border:1px solid var(--border);padding:0.4rem 0.75rem;font-size:0.75rem">
+        <option value="">Select tasting...</option>
+      </select>
+      <button class="btn-admin" onclick="openAddTasting(); showTab('tastings')">+ New Tasting</button>
+      <button class="btn-admin primary" onclick="calculateAmounts()" id="btn-calculate" style="display:none">Calculate Amounts</button>
+    </div>
+    <div id="finance-summary" style="margin-bottom:1.5rem"></div>
+    <div id="finance-drivers" style="margin-bottom:1.5rem"></div>
+    <div id="finance-members"></div>
+  </div>
+
+  <!-- NOMINATIONS TAB -->
+  <div id="tab-nominations" class="tab-content">
+    <div class="admin-section-header">
+      <h2>Nominations</h2>
+      <button class="btn-admin" onclick="openSetDeadline()">Set Deadline</button>
+    </div>
+    <div id="nominations-admin-container"></div>
+  </div>
+
+  <!-- VEHICLES TAB -->
+  <div id="tab-vehicles" class="tab-content">
+    <div class="admin-section-header">
+      <h2>Registered Vehicles</h2>
+    </div>
+    <div id="vehicles-container"></div>
+  </div>
+
+  <!-- NOMINATIONS TAB -->
+  <div id="tab-nominations" class="tab-content">
+    <div class="admin-section-header">
+      <h2>Nominations</h2>
+      <button class="btn-admin" onclick="openNominationSettings()">Settings</button>
+    </div>
+    <div id="nominations-admin-container"></div>
+  </div>
+
+  <!-- EMAIL TAB -->
+  <div id="tab-email" class="tab-content">
+    <div class="admin-section-header">
+      <h2>Email Members</h2>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);padding:1.5rem;margin-bottom:1.5rem">
+      <div style="font-size:0.6rem;letter-spacing:0.2em;color:var(--gold);text-transform:uppercase;margin-bottom:1rem">Compose</div>
+      <div class="form-group"><label>Subject</label><input id="email-subject" /></div>
+      <div class="form-group"><label>Recipients</label>
+        <select id="email-recipients" style="background:var(--surface);color:var(--white);border:1px solid var(--border);padding:0.5rem;width:100%">
+          <option value="founding">Founding Members only</option>
+          <option value="all">All active members</option>
+          <option value="single">Single member (enter code below)</option>
+        </select>
+      </div>
+      <div class="form-group" id="single-code-group" style="display:none">
+        <label>Member Code</label><input id="email-single-code" placeholder="PRIMUM-XXX-0" />
+      </div>
+      <div class="form-group"><label>Message Body</label><textarea id="email-body" style="min-height:200px"></textarea></div>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
+        <input type="checkbox" id="email-include-link" checked style="accent-color:var(--gold)" />
+        <label for="email-include-link" style="font-size:0.72rem;color:var(--muted);cursor:pointer">Include each member's personal portal link in the body</label>
+      </div>
+      <div class="form-actions" style="justify-content:flex-start">
+        <button class="btn-admin primary" onclick="generateMailto()">Open in Mail App</button>
+        <button class="btn-admin" onclick="copyAllEmails()">Copy All Emails</button>
+      </div>
+    </div>
+    <div id="email-output" style="margin-top:1rem"></div>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal-overlay" class="modal-overlay hidden" onclick="closeModal()">
+    <div id="modal-box" class="modal-box" onclick="event.stopPropagation()">
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

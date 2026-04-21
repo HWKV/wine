@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HWKV</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="screen active">
+    <div class="login-container">
+      <div class="logo-block">
+        <div class="hwkv-mark">HWKV</div>
+        <div class="society-name">HELSHOOGTE WINE CULTURE SOCIETY</div>
+      </div>
+      <div class="login-form">
+        <p id="login-label" class="login-instruction">Enter your member code</p>
+        <input type="text" id="code-input" placeholder="PRIMUM-XXX-0" autocomplete="off" autocapitalize="characters" />
+        <div id="login-error" class="error-msg hidden">Code not recognised.</div>
+        <button id="login-btn" onclick="handleLogin()">Enter</button>
+      </div>
+      <div class="primum-tag">PRIMUM XXII</div>
+    </div>
+  </div>
+
+  <!-- MEMBER PORTAL -->
+  <div id="portal-screen" class="screen">
+
+    <header>
+      <div class="header-inner">
+        <span class="hwkv-mark small">HWKV</span>
+        <span id="member-greeting" class="greeting"></span>
+        <div style="display:flex;align-items:center;gap:0.75rem">
+          <button id="lang-toggle" class="logout-btn" onclick="toggleLanguage()" style="font-size:0.6rem;letter-spacing:0.1em;border:1px solid var(--border);padding:0.3rem 0.6rem;border-radius:0">EN</button>
+          <button class="logout-btn" onclick="logout()">↩</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- MESSAGES SECTION -->
+      <section id="messages-section">
+        <h2 id="section-messages-title">From the Secretariat</h2>
+        <div id="messages-list" class="messages-list"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- TASTINGS SECTION -->
+      <section id="tastings-section">
+        <h2 id="section-tastings-title">Tastings</h2>
+        <div id="tastings-list" class="tastings-list"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- PAST TASTINGS SECTION -->
+      <section id="history-section">
+        <h2 id="section-history-title">Your History</h2>
+        <div id="history-list" class="tastings-list"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- NOMINATIONS SECTION -->
+      <section id="nominations-section">
+        <h2 id="section-nominations-title">Nominations</h2>
+        <div id="nominations-content"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- NOMINATIONS SECTION -->
+      <section id="nominations-section">
+        <h2 id="section-nominations-title">Nominations</h2>
+        <div id="nominations-content"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- CAR SECTION -->
+      <section id="car-section">
+        <h2 id="section-car-title">Transport</h2>
+        <div id="car-content"></div>
+      </section>
+
+    </main>
+
+    <footer>
+      <span class="footer-tag">PRIMUM XXII · HWKV</span>
+    </footer>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

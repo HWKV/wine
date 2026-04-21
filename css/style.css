@@ -1,0 +1,520 @@
+/* =============================================
+   HWKV — Helshoogte Wine Culture Society
+   Stylesheet
+   ============================================= */
+
+:root {
+  --black: #0a0a0a;
+  --dark: #111111;
+  --surface: #1a1a1a;
+  --border: #2a2a2a;
+  --gold: #b8963e;
+  --gold-light: #d4af6a;
+  --white: #f0ece4;
+  --muted: #6b6560;
+  --error: #8b3a3a;
+  --success: #3a6b4a;
+  --font-serif: 'Georgia', 'Times New Roman', serif;
+  --font-sans: 'Helvetica Neue', 'Arial', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ---- SCREENS ---- */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ---- LOGIN ---- */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 3rem;
+}
+
+.logo-block {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.hwkv-mark {
+  font-family: var(--font-sans);
+  font-size: 2.5rem;
+  font-weight: 300;
+  letter-spacing: 0.4em;
+  color: var(--white);
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  letter-spacing: 0.2em;
+}
+
+.hwkv-mark.small {
+  width: 42px;
+  height: 42px;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  border-color: var(--border);
+}
+
+.society-name {
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  color: var(--muted);
+  text-transform: uppercase;
+  max-width: 200px;
+  text-align: center;
+  line-height: 1.8;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.login-instruction {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+#code-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--white);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  padding: 0.75rem 0;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#code-input:focus {
+  border-bottom-color: var(--gold);
+}
+
+#code-input::placeholder { color: var(--muted); }
+
+button#login-btn {
+  margin-top: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  padding: 0.75rem 2.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+button#login-btn:hover {
+  background: var(--gold);
+  color: var(--black);
+}
+
+.primum-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--border);
+  text-transform: uppercase;
+  position: fixed;
+  bottom: 2rem;
+}
+
+.error-msg {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--error);
+  text-transform: uppercase;
+}
+
+.hidden { display: none !important; }
+
+/* ---- HEADER ---- */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  position: sticky;
+  top: 0;
+  background: var(--black);
+  z-index: 10;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.greeting {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+.logout-btn:hover { color: var(--white); }
+
+/* ---- MAIN ---- */
+main {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+section h2 {
+  font-family: var(--font-serif);
+  font-weight: normal;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* ---- MESSAGES ---- */
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.25rem 1.5rem;
+  position: relative;
+}
+
+.message-card.pinned {
+  border-color: var(--gold);
+}
+
+.message-card.pinned::before {
+  content: '●';
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  color: var(--gold);
+  font-size: 0.5rem;
+}
+
+.message-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: normal;
+  margin-bottom: 0.5rem;
+  color: var(--white);
+}
+
+.message-body {
+  font-size: 0.85rem;
+  color: #a09890;
+  line-height: 1.7;
+}
+
+.message-date {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-top: 0.75rem;
+  text-transform: uppercase;
+}
+
+/* ---- TASTINGS ---- */
+.tastings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.tasting-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+}
+
+.tasting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.tasting-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: normal;
+}
+
+.tasting-badge {
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.tasting-badge.open { border-color: var(--gold); color: var(--gold); }
+.tasting-badge.confirmed { border-color: var(--success); color: #6bbf80; }
+.tasting-badge.waitlist { color: var(--muted); }
+
+.tasting-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.tasting-spots {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.tasting-spots span {
+  color: var(--white);
+  font-weight: bold;
+}
+
+/* Timer */
+.rsvp-timer {
+  margin-bottom: 1rem;
+}
+
+.timer-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.timer-display {
+  font-family: var(--font-sans);
+  font-size: 1.4rem;
+  letter-spacing: 0.1em;
+  color: var(--gold-light);
+  font-weight: 300;
+}
+
+/* RSVP buttons */
+.rsvp-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.btn-rsvp {
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.6rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-rsvp:hover { background: var(--gold); color: var(--black); }
+.btn-rsvp:disabled { opacity: 0.3; cursor: default; }
+.btn-rsvp:disabled:hover { background: transparent; color: var(--gold); }
+
+.btn-rsvp.secondary {
+  border-color: var(--border);
+  color: var(--muted);
+}
+.btn-rsvp.secondary:hover { background: var(--border); color: var(--white); }
+
+.rsvp-status-text {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.rsvp-status-text.confirmed { color: #6bbf80; }
+.rsvp-status-text.waitlist { color: var(--muted); }
+
+/* Payment confirm */
+.payment-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.payment-confirm input[type="checkbox"] {
+  accent-color: var(--gold);
+}
+
+/* ---- FOOTER ---- */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.footer-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  color: var(--border);
+  text-transform: uppercase;
+}
+
+/* ---- LOADING STATE ---- */
+.loading-dots::after {
+  content: '...';
+  animation: dots 1.2s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+/* ---- MOBILE ---- */
+@media (max-width: 500px) {
+  main { padding: 2rem 1.25rem 4rem; }
+  .tasting-header { flex-direction: column; gap: 0.5rem; }
+  .timer-display { font-size: 1.1rem; }
+}
+
+/* ---- LOGO ---- */
+.logo-img {
+  width: 140px;
+  height: auto;
+  filter: invert(1);
+  opacity: 0.92;
+}
+
+/* ---- HISTORY / PAST TASTINGS ---- */
+.history-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.history-card .tasting-title {
+  font-size: 0.9rem;
+}
+
+.history-meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+/* ---- CAR / TRANSPORT ---- */
+.car-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.25rem 1.5rem;
+}
+
+.car-registered {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.car-detail {
+  font-size: 0.8rem;
+  color: #a09890;
+  margin-top: 0.3rem;
+}
+
+.car-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.car-form input, .car-form select {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--white);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.car-form input:focus, .car-form select:focus {
+  border-bottom-color: var(--gold);
+}
+
+.car-form input::placeholder { color: var(--muted); }
+
+.car-form select option { background: var(--dark); }
