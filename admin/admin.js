@@ -201,7 +201,6 @@ async function loadAdminTastings() {
           <span class="badge-small ${t.status === 'open' ? 'green' : t.status === 'completed' ? '' : 'gold'}">${t.status}</span>
           <button class="btn-admin" onclick="openEditTasting('${t.id}')">Edit</button>
           <button class="btn-admin danger" onclick="deleteTasting('${t.id}')">Delete</button>
-          <button class="btn-admin danger" onclick="deleteTasting('${t.id}')">Delete</button>
           <button class="btn-admin" onclick="toggleTastingStatus('${t.id}', '${t.status}')">
             ${t.status === 'upcoming' ? 'Open RSVP' : t.status === 'open' ? 'Close RSVP' : 'Reopen'}
           </button>
@@ -1162,6 +1161,22 @@ async function confirmApprove(id) {
     member_code_assigned: code,
     admin_notes: notes || null
   }).eq('id', id);
+
+  // Get nomination details and create member
+  const { data: nom } = await db.from('nominations').select('*').eq('id', id).single();
+  await db.from('members').insert({
+    first_name: nom.first_name,
+    surname: nom.surname,
+    room: nom.room || null,
+    email: nom.email || null,
+    member_code: code,
+    member_type: document.getElementById('approve-type')?.value || 'General',
+    nominated_by: null,
+    membership_accepted: false,
+    membership_paid: false,
+    language: 'Eng',
+    active: true
+  });
 
   closeModal();
   loadAdminNominations();
