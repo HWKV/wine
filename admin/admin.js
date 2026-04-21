@@ -36,8 +36,9 @@ function showTab(name) {
   if (name === 'messages') loadAdminMessages();
   if (name === 'rsvps') loadTastingFilter();
   if (name === 'finance') initFinanceTab();
-  if (name === 'email') { const k = localStorage.getItem('hwkv_resend_key');
+  if (name === 'email') { const k = localStorage.getItem('hwkv_resend_key'); if(k) document.getElementById('resend-key-input').value = k; }
   if (name === 'vehicles') loadVehicles();
+  if (name === 'nominations') loadAdminNominations();
   if (name === 'nominations') loadAdminNominations();
 }
 
@@ -181,7 +182,7 @@ async function saveMember() {
 
 async function loadAdminTastings() {
   const container = document.getElementById('tastings-admin-container');
-  const { data } = await db.from('tastings').select('*').order('number', { ascending: true });
+  const { data } = await db.from('tastings').select('*').order('tasting_date');
 
   if (!data || data.length === 0) {
     container.innerHTML = '<p style="color:var(--muted);font-size:0.8rem">No tastings yet.</p>';
@@ -199,6 +200,7 @@ async function loadAdminTastings() {
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
           <span class="badge-small ${t.status === 'open' ? 'green' : t.status === 'completed' ? '' : 'gold'}">${t.status}</span>
           <button class="btn-admin" onclick="openEditTasting('${t.id}')">Edit</button>
+          <button class="btn-admin danger" onclick="deleteTasting('${t.id}')">Delete</button>
           <button class="btn-admin danger" onclick="deleteTasting('${t.id}')">Delete</button>
           <button class="btn-admin" onclick="toggleTastingStatus('${t.id}', '${t.status}')">
             ${t.status === 'upcoming' ? 'Open RSVP' : t.status === 'open' ? 'Close RSVP' : 'Reopen'}
@@ -738,6 +740,7 @@ const BASE_URL = 'https://HWKV.github.io/wine';
 
 document.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('hwkv_resend_key');
+  if (saved) document.getElementById('resend-key-input').value = saved;
 
   document.getElementById('email-recipients')?.addEventListener('change', function() {
     document.getElementById('single-code-group').style.display =
@@ -883,7 +886,18 @@ async function saveEditMessage() {
   loadAdminMessages();
 }
 
+// =============================================
+// DELETE TASTING
+// =============================================
 
+async function deleteTasting(id) {
+  if (!confirm('Delete this tasting? This will also delete all RSVPs for it.')) return;
+  await db.from('rsvps').delete().eq('tasting_id', id);
+  await db.from('tasting_drivers').delete().eq('tasting_id', id);
+  await db.from('tastings').delete().eq('id', id);
+  loadAdminTastings();
+  showToast('Tasting deleted');
+}
 
 // =============================================
 // NOMINATIONS ADMIN
@@ -981,8 +995,7 @@ async function approveNomination() {
 
   await db.from('nominations').update({
     status: 'approved',
-    member_code_assigned: code, 
-    member_type_assigned: document.getElementById('approve-type').value,
+    member_code_assigned: code,
     admin_notes: notes || null
   }).eq('id', id);
 
@@ -1050,17 +1063,10 @@ async function clearDeadline() {
   loadAdminNominations();
 }
 
-  // =============================================
-// DELETE TASTING
-// =============================================
-
 async function deleteTasting(id) {
   if (!confirm('Delete this tasting? This will also delete all RSVPs for it.')) return;
-  await db.from('rsvps').delete().eq('tasting_id', id);
-  await db.from('tasting_drivers').delete().eq('tasting_id', id);
   await db.from('tastings').delete().eq('id', id);
   loadAdminTastings();
-  showToast('Tasting deleted');
 }
 
 // =============================================
@@ -1137,14 +1143,6 @@ function approveNomination(id) {
   document.getElementById('modal-content').innerHTML = `
     <div class="modal-title">Approve Nomination</div>
     <div class="form-group"><label>Assign Member Code</label><input id="approve-code" placeholder="e.g. SECUND-XXX-1" /></div>
-    <div class="form-group"><label>Membership Type</label>
-      <select id="approve-type" style="background:var(--surface);color:var(--white);border:1px solid var(--border);padding:0.5rem;width:100%">
-        <option value="General">General</option>
-        <option value="Founding Member">Founding Member</option>
-        <option value="Driver">Driver</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
     <div class="form-group"><label>Admin Notes (optional)</label><textarea id="approve-notes"></textarea></div>
     <div class="form-actions">
       <button class="btn-admin" onclick="closeModal()">Cancel</button>
@@ -1162,7 +1160,6 @@ async function confirmApprove(id) {
   await db.from('nominations').update({
     status: 'approved',
     member_code_assigned: code,
-    member_type_assigned: document.getElementById('approve-type')?.value || 'General',
     admin_notes: notes || null
   }).eq('id', id);
 
