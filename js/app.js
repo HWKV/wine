@@ -163,7 +163,7 @@ function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
   const now = new Date();
   const opensAt = tasting.rsvp_opens_at ? new Date(tasting.rsvp_opens_at) : null;
   const closesAt = tasting.rsvp_closes_at ? new Date(tasting.rsvp_closes_at) : null;
-  const spotsLeft = TASTING_CAPACITY - confirmedCount;
+  const spotsLeft = (tasting.capacity || TASTING_CAPACITY) - confirmedCount;
 
   const rsvpIsOpen = tasting.status === 'open' && (!opensAt || opensAt <= now) && (!closesAt || closesAt > now);
   const rsvpNotYetOpen = opensAt && opensAt > now;
@@ -229,7 +229,7 @@ function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
         ${tasting.location ? `<span>${tasting.location}</span>` : ''}
       </div>
       <div class="tasting-spots">
-        ${spotsLeft > 0 ? `<span style="color:var(--white)">${confirmedCount}/${TASTING_CAPACITY}</span> ${lang === 'Afr' ? 'plekke bespreek' : 'places taken'}` : `<span style="color:var(--error)">${t('spotsFull', lang)}</span>`}
+        ${spotsLeft > 0 ? `<span style="color:var(--white)">${confirmedCount}/${tasting.capacity || TASTING_CAPACITY}</span> ${lang === 'Afr' ? 'plekke bespreek' : 'places taken'}` : `<span style="color:var(--error)">${t('spotsFull', lang)}</span>`}
       </div>
       ${timerHtml}
       ${actionsHtml}
