@@ -227,6 +227,7 @@ function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
       <div class="tasting-meta">
         <span>${tasting.tasting_date ? formatDate(tasting.tasting_date) : '—'}</span>
         ${tasting.location ? `<span>${tasting.location}</span>` : ''}
+        ${tastingFee > 0 ? `<span style="color:var(--gold)">R ${tastingFee.toFixed(2)}</span>` : ''}
       </div>
       <div class="tasting-spots">
         ${spotsLeft > 0 ? `<span style="color:var(--white)">${confirmedCount}/${tasting.capacity || TASTING_CAPACITY}</span> ${lang === 'Afr' ? 'plekke bespreek' : 'places taken'}` : `<span style="color:var(--error)">${t('spotsFull', lang)}</span>`}
