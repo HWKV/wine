@@ -225,7 +225,7 @@ function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
         ${badge}
       </div>
       <div class="tasting-meta">
-        <span>${tasting.tasting_date ? formatDate(tasting.tasting_date) : '—'}</span>
+        <span>${tasting.tasting_date ? formatDate(tasting.tasting_date) + ' · ' + new Date(tasting.tasting_date).toLocaleTimeString(lang === 'Afr' ? 'af-ZA' : 'en-ZA', {hour:'2-digit', minute:'2-digit'}) : '—'}</span>
         ${tasting.location ? `<span>${tasting.location}</span>` : ''}
         ${tastingFee > 0 ? `<span style="color:var(--gold)">R ${tastingFee.toFixed(2)}</span>` : ''}
       </div>
