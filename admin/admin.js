@@ -730,7 +730,7 @@ async function saveEditFees(tastingId) {
 }
 
 // =============================================
-// EMAIL — via Resend.com
+// EMAIL
 // =============================================
 
 const BASE_URL = 'https://HWKV.github.io/wine';
@@ -802,7 +802,7 @@ async function loadVehicles() {
 }
 
 // =============================================
-// EMAIL — mailto approach
+// EMAIL
 // =============================================
 
 async function generateMailto() {
@@ -961,7 +961,10 @@ function nominationCard(n) {
           ${n.status === 'pending' ? `
             <button class="btn-admin primary" onclick="openApproveNomination('${n.id}')">Approve</button>
             <button class="btn-admin danger" onclick="declineNomination('${n.id}')">Decline</button>
-          ` : `<span class="badge-small ${n.status === 'approved' ? 'green' : 'red'}">${n.status}</span>`}
+          ` : `<div style="display:flex;flex-direction:column;gap:0.4rem">
+                  <span class="badge-small ${n.status === 'approved' ? 'green' : 'red'}">${n.status}</span>
+                  ${n.status === 'denied' ? `<button class="btn-admin danger" onclick="deleteNomination('${n.id}')">Delete</button>` : ''}
+                  </div>`}
         </div>
       </div>
     </div>
@@ -1048,7 +1051,7 @@ async function saveDeadline() {
 
   // Store as special message
   await db.from('messages').delete().eq('title', 'NOM_DEADLINE');
-  await db.from('messages').insert({ title: 'NOM_DEADLINE', body: iso, language: 'both', pinned: false });
+  await db.from('messages').insert({ title: 'Nominations Round 1 Deadline', body: iso, language: 'both', pinned: false });
 
   closeModal();
   showToast('Deadline set');
@@ -1244,4 +1247,11 @@ async function saveNominationSettings() {
   closeModal();
   loadAdminNominations();
   showToast('Settings saved');
+}
+
+async function deleteNomination(id) {
+  if (!confirm('Delete this nomination?')) return;
+  await db.from('nominations').delete().eq('id', id);
+  loadAdminNominations();
+  showToast('Nomination deleted');
 }
