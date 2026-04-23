@@ -248,10 +248,19 @@ function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
             </div>
           </div>
           <div style="background:var(--surface);border:1px solid var(--border);padding:0.75rem 1rem;font-size:0.72rem;color:var(--muted);line-height:1.6">
-            ${lang === 'Afr' 
+            <div style="margin-bottom:0.5rem;">
+              ${lang === 'Afr' 
               ? `Gebruik jou lidmaatskapkode <span style="color:var(--gold);font-family:monospace">${currentMember.member_code}</span> as verwysing. Stuur bewys van betaling na die Sekretariaat indien verlang.`
               : `Use your membership code <span style="color:var(--gold);font-family:monospace">${currentMember.member_code}</span> as payment reference. Send proof of payment to the Secretariat if required.`}
-          </div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:0.5rem;">
+              <strong>${lang === 'Afr' ? 'Bankbesonderhede' : 'Banking Details'}</strong><br>
+              Investec Bank<br>
+              ${lang === 'Afr' ? 'Rekeningnommer' : 'Account Number'}: 10012991243<br>
+              ${lang === 'Afr' ? 'Taknommer' : 'Branch Number'}: 580105<br>
+              ${lang === 'Afr' ? 'Rekeninghouer' : 'Account Holder'}: Cornelius Marthinus Prinsloo
+            </div>
+        </div>
         </div>` : ''}
     </div>
   `;
