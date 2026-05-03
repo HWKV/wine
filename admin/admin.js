@@ -1118,6 +1118,7 @@ async function loadAdminNominations() {
                       <button class="btn-admin primary" onclick="approveNomination('${n.id}')">Approve</button>
                       <button class="btn-admin danger" onclick="denyNomination('${n.id}')">Deny</button>
                     ` : ''}
+                    <button class="btn-admin danger" onclick="deleteNomination('${n.id}')">Delete</button>
                   </div>
                 </td>
               </tr>
@@ -1229,4 +1230,11 @@ async function saveNominationSettings() {
   closeModal();
   loadAdminNominations();
   showToast('Settings saved');
+}
+
+async function deleteNomination(id) {
+  if (!confirm('Delete this nomination?')) return;
+  await db.from('nominations').delete().eq('id', id);
+  loadAdminNominations();
+  showToast('Nomination deleted');
 }
