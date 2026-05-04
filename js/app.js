@@ -222,7 +222,7 @@ function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
         <button class="btn-rsvp" onclick="submitRsvp('${tasting.id}', '${tasting.rsvp_method}')" ${spotsLeft <= 0 && tasting.rsvp_method === 'fcfs' ? 'disabled' : ''}>${t('rsvpNow', lang)}</button>
         <button class="btn-rsvp secondary" onclick="submitRsvp('${tasting.id}', '${tasting.rsvp_method}', true)">${lang === 'Afr' ? 'Kan nie bywoon nie' : 'Cannot attend'}</button>
         ${methodNote}
-      </div>;
+      </div>';
   }
 
   return `
