@@ -558,3 +558,19 @@ footer {
   .timer-display { font-size: 1.1rem; }
   .tasting-title { font-size: 1.05rem; }
 }
+
+/* ---- PASSWORD INPUT ---- */
+#password-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--cream);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  padding: 0.85rem 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#password-input:focus { border-color: var(--gold); }
+#password-input::placeholder { color: var(--muted); }
