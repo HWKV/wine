@@ -68,6 +68,7 @@ function enterPortal() {
   document.getElementById('section-tastings-title').textContent = t('sectionTastings', lang);
   document.getElementById('section-history-title').textContent = t('sectionHistory', lang);
   document.getElementById('section-car-title').textContent = t('sectionCar', lang);
+  if (document.getElementById('section-membership-title')) document.getElementById('section-membership-title').textContent = lang === 'Afr' ? 'Lidmaatskap' : 'Membership';
   if (document.getElementById('section-nominations-title')) {
     document.getElementById('section-nominations-title').textContent = t('sectionNominations', lang);
   }
@@ -79,7 +80,9 @@ function enterPortal() {
   loadTastings();
   loadHistory();
   loadNominations();
+  loadMembership();
   loadCarSection();
+  updateFooter();
 }
 
 // ---- MESSAGES ----
@@ -383,6 +386,7 @@ function toggleLanguage() {
   document.getElementById('section-tastings-title').textContent = t('sectionTastings', lang);
   document.getElementById('section-history-title').textContent = t('sectionHistory', lang);
   document.getElementById('section-car-title').textContent = t('sectionCar', lang);
+  if (document.getElementById('section-membership-title')) document.getElementById('section-membership-title').textContent = lang === 'Afr' ? 'Lidmaatskap' : 'Membership';
   if (document.getElementById('section-nominations-title')) {
     document.getElementById('section-nominations-title').textContent = t('sectionNominations', lang);
   }
@@ -392,7 +396,9 @@ function toggleLanguage() {
   loadTastings();
   loadHistory();
   loadNominations();
+  loadMembership();
   loadCarSection();
+  updateFooter();
 }
 
 // ---- HISTORY ----
@@ -682,4 +688,109 @@ async function changePassword() {
   msg.textContent = lang === 'Afr' ? 'Wagwoord suksesvol opgedateer.' : 'Password updated successfully.';
   document.getElementById('new-password').value = '';
   document.getElementById('confirm-password').value = '';
+}
+
+
+// ---- FOOTER ----
+
+function updateFooter() {
+  const el = document.getElementById('footer-tag');
+  if (!el) return;
+  // Derive generation from code prefix
+  const code = currentMember.member_code || '';
+  const prefix = code.split('-')[0] || 'HWKV';
+  el.textContent = prefix + ' XXII · HWKV';
+}
+
+// ---- MEMBERSHIP INFO ----
+
+async function loadMembership() {
+  const container = document.getElementById('membership-content');
+  if (!container) return;
+
+  // Get nomination count
+  const { data: noms } = await db.from('nominations').select('id, status').eq('nominated_by', currentMember.id);
+  const nomCount = noms?.length || 0;
+  const nomApproved = noms?.filter(n => n.status === 'approved').length || 0;
+
+  const m = currentMember;
+  const lang_ = lang;
+
+  container.innerHTML = `
+    <div class="car-card" id="membership-view">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+        <div>
+          <div style="font-size:0.58rem;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:0.25rem">${lang_ === 'Afr' ? 'Voornaam' : 'First Name'}</div>
+          <div style="font-size:0.9rem;color:var(--cream)">${m.first_name || '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:0.58rem;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:0.25rem">${lang_ === 'Afr' ? 'Van' : 'Surname'}</div>
+          <div style="font-size:0.9rem;color:var(--cream)">${m.surname || '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:0.58rem;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:0.25rem">${lang_ === 'Afr' ? 'Lidmaatskapkode' : 'Member Code'}</div>
+          <div style="font-size:0.85rem;color:var(--gold);font-family:monospace">${m.member_code}</div>
+        </div>
+        <div>
+          <div style="font-size:0.58rem;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:0.25rem">${lang_ === 'Afr' ? 'Tipe' : 'Type'}</div>
+          <div style="font-size:0.85rem;color:var(--cream)">${m.member_type || '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:0.58rem;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:0.25rem">${lang_ === 'Afr' ? 'Kamer' : 'Room'}</div>
+          <div style="font-size:0.85rem;color:var(--cream)">${m.room || '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:0.58rem;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:0.25rem">Email</div>
+          <div style="font-size:0.78rem;color:var(--cream)">${m.email || '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:0.58rem;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:0.25rem">${lang_ === 'Afr' ? 'Aanvaar' : 'Accepted'}</div>
+          <span class="badge-small ${m.membership_accepted ? 'green' : ''}">${m.membership_accepted ? (lang_ === 'Afr' ? 'Ja' : 'Yes') : (lang_ === 'Afr' ? 'Nee' : 'No')}</span>
+        </div>
+        <div>
+          <div style="font-size:0.58rem;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:0.25rem">${lang_ === 'Afr' ? 'Nominasies' : 'Nominations'}</div>
+          <div style="font-size:0.85rem;color:var(--cream)">${nomApproved} ${lang_ === 'Afr' ? 'goedgekeur' : 'approved'} / ${nomCount} ${lang_ === 'Afr' ? 'ingedien' : 'submitted'}</div>
+        </div>
+      </div>
+      <button class="btn-rsvp secondary" style="font-size:0.65rem" onclick="showMembershipEdit()">${lang_ === 'Afr' ? 'Wysig' : 'Edit Details'}</button>
+    </div>
+  `;
+}
+
+function showMembershipEdit() {
+  const m = currentMember;
+  const container = document.getElementById('membership-content');
+  container.innerHTML = `
+    <div class="car-card">
+      <div class="car-form">
+        <input id="ms-firstname" placeholder="${lang === 'Afr' ? 'Voornaam' : 'First Name'}" value="${m.first_name || ''}" />
+        <input id="ms-surname" placeholder="${lang === 'Afr' ? 'Van' : 'Surname'}" value="${m.surname || ''}" />
+        <input id="ms-room" placeholder="${lang === 'Afr' ? 'Kamer' : 'Room'}" value="${m.room || ''}" />
+        <input id="ms-email" type="email" placeholder="Email" value="${m.email || ''}" />
+        <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+          <button class="btn-rsvp" onclick="saveMembershipDetails()">${lang === 'Afr' ? 'Stoor' : 'Save'}</button>
+          <button class="btn-rsvp secondary" onclick="loadMembership()">${lang === 'Afr' ? 'Kanselleer' : 'Cancel'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function saveMembershipDetails() {
+  const payload = {
+    first_name: document.getElementById('ms-firstname').value.trim(),
+    surname: document.getElementById('ms-surname').value.trim(),
+    room: document.getElementById('ms-room').value.trim() || null,
+    email: document.getElementById('ms-email').value.trim() || null,
+  };
+
+  const { error } = await db.from('members').update(payload).eq('id', currentMember.id);
+
+  if (!error) {
+    Object.assign(currentMember, payload);
+    sessionStorage.setItem('hwkv_member', JSON.stringify(currentMember));
+    loadMembership();
+    // Update greeting
+    document.getElementById('member-greeting').textContent = t('greeting', lang, currentMember.first_name);
+  }
 }
