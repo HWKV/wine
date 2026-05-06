@@ -39,7 +39,6 @@ function showTab(name) {
   if (name === 'email') { const k = localStorage.getItem('hwkv_resend_key'); if(k) document.getElementById('resend-key-input').value = k; }
   if (name === 'vehicles') loadVehicles();
   if (name === 'nominations') loadAdminNominations();
-  if (name === 'nominations') loadAdminNominations();
 }
 
 // ---- MEMBERS ----
@@ -392,6 +391,8 @@ async function loadRsvps() {
   const { data: tasting } = await db.from('tastings').select('*').eq('id', tastingId).single();
 
   ballotBtn.style.display = tasting?.rsvp_method === 'ballot' ? 'inline-block' : 'none';
+  const manualRsvpBtn = document.getElementById('btn-manual-rsvp');
+  if (manualRsvpBtn) { manualRsvpBtn.style.display = 'inline-block'; manualRsvpBtn.onclick = () => openManualRsvp(tastingId); }
   ballotBtn.onclick = () => runBallot(tastingId, tasting.capacity);
 
   // Get RSVPs with member info
@@ -531,6 +532,8 @@ async function loadFinance() {
 
   calcBtn.style.display = 'inline-block';
   calcBtn.onclick = () => calculateAmounts(tastingId);
+  const manualBtn = document.getElementById('btn-manual-rsvp');
+  if (manualBtn) manualBtn.style.display = 'inline-block';
 
   document.getElementById('finance-summary').style.padding = '0';
   document.getElementById('finance-drivers').style.padding = '0';
@@ -1235,4 +1238,60 @@ async function saveNominationSettings() {
   closeModal();
   loadAdminNominations();
   showToast('Settings saved');
+}
+
+
+// ---- MARK TASTING COMPLETED ----
+
+async function markTastingCompleted(id) {
+  if (!confirm('Mark this tasting as completed? This will update member history.')) return;
+  await db.from('tastings').update({ status: 'completed' }).eq('id', id);
+  loadAdminTastings();
+  showToast('Tasting marked as completed');
+}
+
+// ---- MANUAL RSVP ----
+
+function openManualRsvp(tastingId) {
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Manual RSVP</div>
+    <div class="form-group"><label>Member Code</label><input id="manual-rsvp-code" placeholder="PRIMUM-XXX-0" /></div>
+    <div class="form-group"><label>Status</label>
+      <select id="manual-rsvp-status">
+        <option value="confirmed">Confirmed</option>
+        <option value="waitlist">Waitlist</option>
+        <option value="pending">Pending</option>
+        <option value="declined">Declined</option>
+      </select>
+    </div>
+    <div class="form-group" style="flex-direction:row;align-items:center;gap:0.5rem">
+      <input type="checkbox" id="manual-rsvp-paid" style="accent-color:var(--gold)" />
+      <label style="font-size:0.7rem;color:var(--muted);cursor:pointer">Payment confirmed</label>
+    </div>
+    <div class="form-actions">
+      <button class="btn-admin" onclick="closeModal()">Cancel</button>
+      <button class="btn-admin primary" onclick="saveManualRsvp('${tastingId}')">Add RSVP</button>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+async function saveManualRsvp(tastingId) {
+  const code = document.getElementById('manual-rsvp-code').value.trim().toUpperCase();
+  const status = document.getElementById('manual-rsvp-status').value;
+  const paid = document.getElementById('manual-rsvp-paid').checked;
+
+  const { data: member } = await db.from('members').select('id').eq('member_code', code).single();
+  if (!member) { showToast('Member code not found'); return; }
+
+  await db.from('rsvps').upsert({
+    member_id: member.id,
+    tasting_id: tastingId,
+    status: status,
+    payment_confirmed: paid
+  }, { onConflict: 'member_id,tasting_id' });
+
+  closeModal();
+  loadRsvps();
+  showToast('RSVP added');
 }
