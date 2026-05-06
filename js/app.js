@@ -536,8 +536,26 @@ async function loadNominations() {
   const deadline = settings?.find(s => s.key === 'nomination_deadline')?.value;
   const isOpen = settings?.find(s => s.key === 'nominations_open')?.value !== 'false';
 
-  const { data: nominations } = await db.from('nominations').select('*').eq('nominated_by', currentMember.id);
-  const existing = nominations && nominations.length > 0 ? nominations[0] : null;
+  // Get current nomination period
+  const { data: periodSetting } = await db.from('settings').select('value').eq('key', 'nomination_period').single();
+  const currentPeriod = parseInt(periodSetting?.value || '1');
+
+  // Get nominations for this period (period stored on nomination or just use all if no period column)
+  const { data: nominations } = await db
+    .from('nominations')
+    .select('*')
+    .eq('nominated_by', currentMember.id)
+    .eq('period', currentPeriod);
+
+  // Fallback: if period column doesn't exist yet, get all nominations
+  const { data: allNominations } = await db
+    .from('nominations')
+    .select('*')
+    .eq('nominated_by', currentMember.id)
+    .order('created_at', { ascending: false });
+
+  const periodNoms = nominations || allNominations || [];
+  const existing = periodNoms.length > 0 ? periodNoms[0] : null;
 
   let html = '';
 
@@ -607,13 +625,18 @@ async function submitNomination() {
     return;
   }
 
+  // Get current period
+  const { data: pSetting } = await db.from('settings').select('value').eq('key', 'nomination_period').single();
+  const period = parseInt(pSetting?.value || '1');
+
   const { error } = await db.from('nominations').insert({
     nominated_by: currentMember.id,
     first_name: firstName,
     surname: surname,
     email: email || null,
     motivation: motivation,
-    status: 'pending'
+    status: 'pending',
+    period: period
   });
 
   if (!error) loadNominations();
