@@ -23,7 +23,8 @@
       <div class="login-form">
         <p id="login-label" class="login-instruction">Membership Code</p>
         <input type="text" id="code-input" placeholder="PRIMUM-XXX-0" autocomplete="off" autocapitalize="characters" />
-        <div id="login-error" class="error-msg hidden">Code not recognised.</div>
+        <input type="password" id="password-input" placeholder="Password" autocomplete="current-password" style="margin-top:0.5rem" />
+        <div id="login-error" class="error-msg hidden">Code or password not recognised.</div>
         <button id="login-btn" onclick="handleLogin()">Enter Society</button>
       </div>
       <div class="primum-tag">PRIMUM XXII</div>
@@ -90,6 +91,24 @@
       <section id="car-section">
         <h2 id="section-car-title">Transport</h2>
         <div id="car-content"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ACCOUNT SECTION -->
+      <section id="account-section">
+        <h2>Account</h2>
+        <div id="account-content">
+          <div class="car-card">
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Change your password</p>
+            <div class="car-form">
+              <input type="password" id="new-password" placeholder="New password" />
+              <input type="password" id="confirm-password" placeholder="Confirm new password" />
+              <button class="btn-rsvp" style="align-self:flex-start" onclick="changePassword()">Update Password</button>
+              <div id="password-msg" style="font-size:0.75rem;color:var(--muted)"></div>
+            </div>
+          </div>
+        </div>
       </section>
 
     </main>
