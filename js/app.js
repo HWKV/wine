@@ -17,6 +17,8 @@ async function handleLogin() {
   btn.disabled = true;
   btn.textContent = '·';
 
+  const password = document.getElementById('password-input')?.value || '';
+
   const { data, error } = await db
     .from('members')
     .select('*')
@@ -24,11 +26,19 @@ async function handleLogin() {
     .single();
 
   btn.disabled = false;
-  btn.textContent = 'Enter';
+  btn.textContent = 'Enter Society';
 
   if (error || !data) {
     errorEl.classList.remove('hidden');
     document.getElementById('code-input').value = '';
+    return;
+  }
+
+  // Check password - default is HWKV2026
+  const memberPassword = data.password || 'HWKV2026';
+  if (password !== memberPassword) {
+    errorEl.classList.remove('hidden');
+    document.getElementById('password-input').value = '';
     return;
   }
 
@@ -54,12 +64,13 @@ function enterPortal() {
   document.getElementById('login-screen').classList.remove('active');
   document.getElementById('portal-screen').classList.add('active');
 
-  // Set language strings
   document.getElementById('section-messages-title').textContent = t('sectionMessages', lang);
   document.getElementById('section-tastings-title').textContent = t('sectionTastings', lang);
   document.getElementById('section-history-title').textContent = t('sectionHistory', lang);
   document.getElementById('section-car-title').textContent = t('sectionCar', lang);
-  if (document.getElementById('section-nominations-title')) document.getElementById('section-nominations-title').textContent = t('sectionNominations', lang);
+  if (document.getElementById('section-nominations-title')) {
+    document.getElementById('section-nominations-title').textContent = t('sectionNominations', lang);
+  }
   document.getElementById('member-greeting').textContent = t('greeting', lang, currentMember.first_name);
   const lt = document.getElementById('lang-toggle');
   if (lt) lt.textContent = lang === 'Eng' ? 'EN' : 'AF';
@@ -80,6 +91,7 @@ async function loadMessages() {
   const { data, error } = await db
     .from('messages')
     .select('*')
+    .neq('title', 'NOM_DEADLINE')
     .order('pinned', { ascending: false })
     .order('created_at', { ascending: false });
 
@@ -110,54 +122,35 @@ async function loadTastings() {
   const container = document.getElementById('tastings-list');
   container.innerHTML = `<p class="rsvp-status-text loading-dots">Loading</p>`;
 
-  // Get upcoming tastings
   const { data: tastings, error } = await db
     .from('tastings')
-    .select('*, tasting_fee, levy')
+    .select('*')
     .neq('status', 'completed')
-    .order('tasting_date', { ascending: true })
-    .limit(5);
+    .order('number', { ascending: true })
+    .limit(3);
 
   if (error || !tastings || tastings.length === 0) {
     container.innerHTML = `<p class="rsvp-status-text" style="color:var(--muted)">${t('noTastings', lang)}</p>`;
     return;
   }
 
-  // Get this member's RSVPs
   const tastingIds = tastings.map(t => t.id);
-  const { data: myRsvps } = await db
-    .from('rsvps')
-    .select('*')
-    .eq('member_id', currentMember.id)
-    .in('tasting_id', tastingIds);
-
-  // Get RSVP counts
-  const { data: rsvpCounts } = await db
-    .from('rsvps')
-    .select('tasting_id, status')
-    .in('tasting_id', tastingIds)
-    .eq('status', 'confirmed');
-
-  // Store all tastings for show more
-  window._allTastings = tastings;
-  window._myRsvps = myRsvps;
-  window._rsvpCounts = rsvpCounts;
+  const { data: myRsvps } = await db.from('rsvps').select('*').eq('member_id', currentMember.id).in('tasting_id', tastingIds);
+  const { data: rsvpCounts } = await db.from('rsvps').select('tasting_id, status').in('tasting_id', tastingIds).eq('status', 'confirmed');
 
   container.innerHTML = tastings.map(tasting => {
     const myRsvp = myRsvps?.find(r => r.tasting_id === tasting.id);
-    const tastingFee = (tasting.tasting_fee || 0) + (tasting.levy || 0);
     const confirmedCount = rsvpCounts?.filter(r => r.tasting_id === tasting.id).length || 0;
+    const tastingFee = (tasting.tasting_fee || 0) + (tasting.levy || 0);
     return renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee);
   }).join('');
 
-  // Add show more button if there might be more
   if (tastings.length >= 3) {
     container.innerHTML += `<div style="text-align:center;margin-top:1rem">
       <button class="btn-rsvp secondary" onclick="loadMoreTastings()" id="show-more-btn">${lang === 'Afr' ? 'Wys meer' : 'Show more'}</button>
     </div>`;
   }
 
-  // Start timers
   tastings.forEach(tasting => {
     if (tasting.rsvp_opens_at && new Date(tasting.rsvp_opens_at) > new Date()) {
       startTimer(tasting.id, tasting.rsvp_opens_at);
@@ -165,24 +158,24 @@ async function loadTastings() {
   });
 }
 
-function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
+function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee) {
+  tastingFee = tastingFee || 0;
   const now = new Date();
   const opensAt = tasting.rsvp_opens_at ? new Date(tasting.rsvp_opens_at) : null;
   const closesAt = tasting.rsvp_closes_at ? new Date(tasting.rsvp_closes_at) : null;
-  const spotsLeft = TASTING_CAPACITY - confirmedCount;
-
+  const cap = tasting.capacity || TASTING_CAPACITY;
+  const spotsLeft = cap - confirmedCount;
   const rsvpIsOpen = tasting.status === 'open' && (!opensAt || opensAt <= now) && (!closesAt || closesAt > now);
   const rsvpNotYetOpen = opensAt && opensAt > now;
 
-  // Badge
   let badge = '';
   if (myRsvp?.status === 'confirmed') badge = `<span class="tasting-badge confirmed">${t('badgeConfirmed', lang)}</span>`;
   else if (myRsvp?.status === 'waitlist') badge = `<span class="tasting-badge waitlist">${t('badgeWaitlist', lang)}</span>`;
+  else if (myRsvp?.status === 'declined') badge = `<span class="tasting-badge">${lang === 'Afr' ? 'Afgesê' : 'Declined'}</span>`;
   else if (rsvpIsOpen) badge = `<span class="tasting-badge open">${t('badgeOpen', lang)}</span>`;
   else if (tasting.status === 'upcoming') badge = `<span class="tasting-badge">${t('badgeUpcoming', lang)}</span>`;
   else badge = `<span class="tasting-badge">${t('badgeClosed', lang)}</span>`;
 
-  // Timer block
   let timerHtml = '';
   if (rsvpNotYetOpen) {
     timerHtml = `
@@ -191,12 +184,11 @@ function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
         <div class="timer-display" id="timer-${tasting.id}">--:--:--</div>
       </div>`;
   } else if (rsvpIsOpen) {
-    timerHtml = `<div class="timer-label" style="margin-bottom:0.75rem; color: var(--gold)">${t('rsvpOpen', lang)}</div>`;
+    timerHtml = `<div class="timer-label" style="margin-bottom:0.75rem;color:var(--gold)">${t('rsvpOpen', lang)}</div>`;
   }
 
-  // RSVP actions
   let actionsHtml = '';
-  if (myRsvp) {
+  if (myRsvp && myRsvp.status !== 'declined') {
     const statusText = myRsvp.status === 'confirmed' ? t('statusConfirmed', lang)
       : myRsvp.status === 'waitlist' ? t('statusWaitlist', lang)
       : t('statusPending', lang);
@@ -212,6 +204,11 @@ function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
           ${t('paymentLabel', lang)}
         </label>` : ''}
     `;
+  } else if (myRsvp?.status === 'declined') {
+    actionsHtml = `<div class="rsvp-actions">
+      <span class="rsvp-status-text">${lang === 'Afr' ? 'U het afgesê' : 'You declined'}</span>
+      ${rsvpIsOpen ? `<button class="btn-rsvp secondary" onclick="withdrawRsvp('${myRsvp.id}', '${tasting.id}')">${lang === 'Afr' ? 'Verander' : 'Change'}</button>` : ''}
+    </div>`;
   } else if (rsvpIsOpen) {
     const methodNote = tasting.rsvp_method === 'ballot'
       ? `<span class="rsvp-status-text">${t('ballotNote', lang)}</span>`
@@ -222,8 +219,27 @@ function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
         <button class="btn-rsvp" onclick="submitRsvp('${tasting.id}', '${tasting.rsvp_method}')" ${spotsLeft <= 0 && tasting.rsvp_method === 'fcfs' ? 'disabled' : ''}>${t('rsvpNow', lang)}</button>
         <button class="btn-rsvp secondary" onclick="submitRsvp('${tasting.id}', '${tasting.rsvp_method}', true)">${lang === 'Afr' ? 'Kan nie bywoon nie' : 'Cannot attend'}</button>
         ${methodNote}
-      </div>';
+      </div>`;
   }
+
+  const paymentHtml = myRsvp?.status === 'confirmed' && !myRsvp?.sponsored ? `
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem">
+        <div>
+          <div style="font-size:0.6rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:0.2rem">${lang === 'Afr' ? 'Verskuldig' : 'Amount Owed'}</div>
+          <div style="font-size:1.1rem;color:var(--gold)">R ${tastingFee > 0 ? tastingFee.toFixed(2) : (myRsvp.amount_owed || 0).toFixed(2)}</div>
+        </div>
+        <div>
+          <div style="font-size:0.6rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:0.2rem">${lang === 'Afr' ? 'Betaal' : 'Paid'}</div>
+          <div style="font-size:1.1rem;color:${(myRsvp.amount_paid || 0) >= tastingFee && tastingFee > 0 ? '#6bbf80' : '#c0605a'}">R ${(myRsvp.amount_paid || 0).toFixed(2)}</div>
+        </div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1rem;font-size:0.72rem;color:var(--muted);line-height:1.6">
+        ${lang === 'Afr'
+          ? 'Gebruik jou lidmaatskapkode <span style="color:var(--gold);font-family:monospace">' + currentMember.member_code + '</span> as verwysing. Stuur bewys van betaling na die Sekretariaat indien verlang.'
+          : 'Use your membership code <span style="color:var(--gold);font-family:monospace">' + currentMember.member_code + '</span> as payment reference. Send proof of payment to the Secretariat if required.'}
+      </div>
+    </div>` : '';
 
   return `
     <div class="tasting-card" id="tasting-card-${tasting.id}">
@@ -232,40 +248,31 @@ function renderTastingCard(tasting, myRsvp, confirmedCount, tastingFee = 0) {
         ${badge}
       </div>
       <div class="tasting-meta">
-        <span>${tasting.tasting_date ? formatDate(tasting.tasting_date) : '—'}</span>
+        <span>${tasting.tasting_date ? formatDate(tasting.tasting_date) + ' · ' + new Date(tasting.tasting_date).toLocaleTimeString(lang === 'Afr' ? 'af-ZA' : 'en-ZA', {hour:'2-digit',minute:'2-digit'}) : '—'}</span>
         ${tasting.location ? `<span>${tasting.location}</span>` : ''}
+        ${tastingFee > 0 ? `<span style="font-family:var(--font-serif);font-size:1rem;color:var(--gold);margin-left:auto">R ${tastingFee.toFixed(2)}</span>` : ''}
       </div>
       <div class="tasting-spots">
-        ${spotsLeft > 0 ? `<span style="color:var(--white)">${spotsLeft}/${TASTING_CAPACITY}</span> ${lang === 'Afr' ? 'plekke beskikbaar' : 'places remaining'}` : `<span style="color:var(--error)">${t('spotsFull', lang)}</span>`}
+        ${spotsLeft > 0
+          ? `<span>${confirmedCount}/${cap}</span> ${lang === 'Afr' ? 'plekke bespreek' : 'places taken'}`
+          : `<span style="color:#e05a4e">${t('spotsFull', lang)}</span>`}
+      </div>
+      <div class="spots-bar">
+        <div class="spots-bar-fill" style="width:${Math.min(100, Math.round((confirmedCount / cap) * 100))}%"></div>
       </div>
       ${timerHtml}
       ${actionsHtml}
-      ${tasting.message ? `<div class="message-body" style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border)">${tasting.message}</div>` : ''}
-      ${myRsvp?.status === 'confirmed' && !myRsvp?.sponsored ? `
-        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem">
-            <div>
-              <div style="font-size:0.6rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:0.2rem">${lang === 'Afr' ? 'Verskuldig' : 'Amount Owed'}</div>
-              <div style="font-size:1.1rem;color:var(--gold)">R ${tastingFee > 0 ? tastingFee.toFixed(2) : (myRsvp.amount_owed || 0).toFixed(2)}</div>
-            </div>
-            <div>
-              <div style="font-size:0.6rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:0.2rem">${lang === 'Afr' ? 'Betaal' : 'Paid'}</div>
-              <div style="font-size:1.1rem;color:${(myRsvp.amount_paid || 0) >= tastingFee && tastingFee > 0 ? '#6bbf80' : '#c0605a'}">R ${(myRsvp.amount_paid || 0).toFixed(2)}</div>
-            </div>
-          </div>
-          <div style="background:var(--surface);border:1px solid var(--border);padding:0.75rem 1rem;font-size:0.72rem;color:var(--muted);line-height:1.6">
-            ${lang === 'Afr' 
-              ? `Gebruik jou lidmaatskapkode <span style="color:var(--gold);font-family:monospace">${currentMember.member_code}</span> as verwysing. Stuur bewys van betaling na die Sekretariaat indien verlang.`
-              : `Use your membership code <span style="color:var(--gold);font-family:monospace">${currentMember.member_code}</span> as payment reference. Send proof of payment to the Secretariat if required.`}
-          </div>
-        </div>` : ''}
+      ${tasting.message ? `<div class="message-body" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);white-space:pre-line">${tasting.message}</div>` : ''}
+      ${paymentHtml}
     </div>
   `;
 }
 
 // ---- RSVP ACTIONS ----
 
-async function submitRsvp(tastingId, method, declined = false) {
+async function submitRsvp(tastingId, method, declined) {
+  declined = declined || false;
+
   const { data: existing } = await db
     .from('rsvps')
     .select('id')
@@ -273,43 +280,29 @@ async function submitRsvp(tastingId, method, declined = false) {
     .eq('tasting_id', tastingId)
     .single();
 
-  if (existing) return; // already RSVPd
+  if (existing) return;
 
-  // For fcfs: check spots
-  let status = declined ? 'declined' : 'confirmed';
   if (declined) {
     await db.from('rsvps').insert({ member_id: currentMember.id, tasting_id: tastingId, status: 'declined' });
     loadTastings();
     return;
   }
-  if (method === 'fcfs') {
-    const { data: confirmed } = await db
-      .from('rsvps')
-      .select('id')
-      .eq('tasting_id', tastingId)
-      .eq('status', 'confirmed');
 
-    if ((confirmed?.length || 0) >= TASTING_CAPACITY) {
-      status = 'waitlist';
-    }
+  let status = 'confirmed';
+  if (method === 'fcfs') {
+    const { data: confirmed } = await db.from('rsvps').select('id').eq('tasting_id', tastingId).eq('status', 'confirmed');
+    if ((confirmed?.length || 0) >= TASTING_CAPACITY) status = 'waitlist';
   } else {
-    // ballot — all are pending
     status = 'pending';
   }
 
-  const { error } = await db.from('rsvps').insert({
-    member_id: currentMember.id,
-    tasting_id: tastingId,
-    status: status
-  });
-
-  if (!error) loadTastings();
+  await db.from('rsvps').insert({ member_id: currentMember.id, tasting_id: tastingId, status });
+  loadTastings();
 }
 
 async function withdrawRsvp(rsvpId, tastingId) {
   await db.from('rsvps').delete().eq('id', rsvpId);
 
-  // If fcfs: promote first waitlist person
   const { data: waitlist } = await db
     .from('rsvps')
     .select('id')
@@ -333,71 +326,76 @@ async function confirmPayment(rsvpId, checked) {
 
 function startTimer(tastingId, opensAt) {
   const target = new Date(opensAt).getTime();
-  const el = document.getElementById(`timer-${tastingId}`);
+  const el = document.getElementById('timer-' + tastingId);
   if (!el) return;
 
   const interval = setInterval(() => {
     const diff = target - Date.now();
-    if (diff <= 0) {
-      clearInterval(interval);
-      loadTastings(); // Refresh to show open RSVP
-      return;
-    }
-
+    if (diff <= 0) { clearInterval(interval); loadTastings(); return; }
+    const d = Math.floor(diff / 86400000);
     const h = Math.floor(diff / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
     const s = Math.floor((diff % 60000) / 1000);
-    const d = Math.floor(diff / 86400000);
-
-    if (el) {
-      el.textContent = d > 0
-        ? `${d}d ${pad(h % 24)}:${pad(m)}:${pad(s)}`
-        : `${pad(h)}:${pad(m)}:${pad(s)}`;
-    }
+    if (el) el.textContent = d > 0 ? d + 'd ' + pad(h % 24) + ':' + pad(m) + ':' + pad(s) : pad(h) + ':' + pad(m) + ':' + pad(s);
   }, 1000);
 }
-
-// ---- UTILS ----
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
 function formatDate(iso) {
   const d = new Date(iso);
-  return d.toLocaleDateString(lang === 'Afr' ? 'af-ZA' : 'en-ZA', {
-    weekday: 'short', day: 'numeric', month: 'long', year: 'numeric'
-  });
+  return d.toLocaleDateString(lang === 'Afr' ? 'af-ZA' : 'en-ZA', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
 }
 
 // ---- INIT ----
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Check URL for member code (secretive link method)
   const params = new URLSearchParams(window.location.search);
   const codeFromUrl = params.get('key');
   if (codeFromUrl) {
     document.getElementById('code-input').value = codeFromUrl.toUpperCase();
-    // Auto-login after short delay for effect
     setTimeout(handleLogin, 300);
   }
 
-  // Check session
   const saved = sessionStorage.getItem('hwkv_member');
   if (saved) {
     currentMember = JSON.parse(saved);
     lang = currentMember.language === 'Afr' ? 'Afr' : 'Eng';
+    const langOverride = sessionStorage.getItem('hwkv_lang_override');
+    if (langOverride) lang = langOverride;
     enterPortal();
     return;
   }
 
-  // Enter on keypress
   document.getElementById('code-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleLogin();
   });
 });
 
-// =============================================
-// PAST TASTINGS HISTORY
-// =============================================
+// ---- LANGUAGE TOGGLE ----
+
+function toggleLanguage() {
+  lang = lang === 'Eng' ? 'Afr' : 'Eng';
+  document.getElementById('lang-toggle').textContent = lang === 'Eng' ? 'EN' : 'AF';
+  if (currentMember) sessionStorage.setItem('hwkv_lang_override', lang);
+
+  document.getElementById('section-messages-title').textContent = t('sectionMessages', lang);
+  document.getElementById('section-tastings-title').textContent = t('sectionTastings', lang);
+  document.getElementById('section-history-title').textContent = t('sectionHistory', lang);
+  document.getElementById('section-car-title').textContent = t('sectionCar', lang);
+  if (document.getElementById('section-nominations-title')) {
+    document.getElementById('section-nominations-title').textContent = t('sectionNominations', lang);
+  }
+  document.getElementById('member-greeting').textContent = t('greeting', lang, currentMember.first_name);
+
+  loadMessages();
+  loadTastings();
+  loadHistory();
+  loadNominations();
+  loadCarSection();
+}
+
+// ---- HISTORY ----
 
 async function loadHistory() {
   const container = document.getElementById('history-list');
@@ -412,7 +410,7 @@ async function loadHistory() {
   const past = rsvps?.filter(r => r.tastings?.status === 'completed') || [];
 
   if (past.length === 0) {
-    container.innerHTML = `<p class="rsvp-status-text" style="color:var(--muted)">${t('noHistory', lang)}</p>`;
+    container.innerHTML = '<p class="rsvp-status-text" style="color:var(--muted)">' + t('noHistory', lang) + '</p>';
     return;
   }
 
@@ -421,41 +419,33 @@ async function loadHistory() {
     .map(r => `
       <div class="history-card">
         <div>
-          <div class="tasting-title">${r.tastings.title || 'Tasting ' + r.tastings.number}</div>
+          <div class="tasting-title" style="font-size:0.9rem">${r.tastings.title || 'Tasting ' + r.tastings.number}</div>
           <div class="history-meta">${r.tastings.tasting_date ? formatDate(r.tastings.tasting_date) : '—'}</div>
         </div>
-        <span class="badge-small green" style="font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.2rem 0.5rem;border:1px solid;display:inline-block">
-          ${t('badgeConfirmed', lang)}
-        </span>
+        <span class="badge-small green">${t('badgeConfirmed', lang)}</span>
       </div>
     `).join('');
 }
 
-// =============================================
-// CAR / TRANSPORT REGISTRATION
-// =============================================
+// ---- CAR / TRANSPORT ----
 
 async function loadCarSection() {
   const container = document.getElementById('car-content');
   if (!container) return;
 
-  const { data: car } = await db
-    .from('cars')
-    .select('*')
-    .eq('member_id', currentMember.id)
-    .single();
+  const { data: car } = await db.from('cars').select('*').eq('member_id', currentMember.id).single();
 
   if (car) {
     container.innerHTML = `
       <div class="car-card">
         <div class="car-registered">
           <div>
-            <div style="font-family:var(--font-serif);font-size:0.95rem">${car.make_model}</div>
-            <div class="car-detail">${car.registration} · ${car.seats} ${lang === 'Afr' ? 'sitplekke' : 'seats'}</div>
+            <div style="font-family:var(--font-serif);font-size:1rem;color:var(--cream)">${car.make_model}</div>
+            <div class="car-detail">${car.registration || ''} · ${car.seats} ${lang === 'Afr' ? 'sitplekke' : 'seats'}</div>
             <div class="car-detail" style="margin-top:0.3rem">
               ${car.available
-                ? `<span style="color:var(--gold)">● ${lang === 'Afr' ? 'Beskikbaar' : 'Available'}</span>`
-                : `<span style="color:var(--muted)">● ${lang === 'Afr' ? 'Nie beskikbaar' : 'Not available'}</span>`}
+                ? '<span style="color:var(--gold)">● ' + (lang === 'Afr' ? 'Beskikbaar' : 'Available') + '</span>'
+                : '<span style="color:var(--muted)">● ' + (lang === 'Afr' ? 'Nie beskikbaar' : 'Not available') + '</span>'}
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:0.5rem">
@@ -463,13 +453,12 @@ async function loadCarSection() {
             <button class="btn-rsvp secondary" onclick="removeCar('${car.id}')">${t('carRemove', lang)}</button>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
   } else {
     container.innerHTML = `
       <div class="car-card">
         <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">${t('carRegisterTitle', lang)}</p>
-        <div class="car-form" id="car-form">
+        <div class="car-form">
           <input id="car-make" placeholder="${t('carMake', lang)}" />
           <input id="car-reg" placeholder="${t('carReg', lang)}" />
           <input id="car-seats" type="number" placeholder="${t('carSeats', lang)}" min="1" max="8" />
@@ -477,10 +466,9 @@ async function loadCarSection() {
             <input type="checkbox" id="car-avail" checked style="accent-color:var(--gold)" />
             ${t('carAvailable', lang)}
           </label>
-          <button class="btn-rsvp" style="margin-top:0.5rem;align-self:flex-start" onclick="saveCar(null)">${t('carSave', lang)}</button>
+          <button class="btn-rsvp" style="align-self:flex-start" onclick="saveCar(null)">${t('carSave', lang)}</button>
         </div>
-      </div>
-    `;
+      </div>`;
   }
 }
 
@@ -490,19 +478,18 @@ function showCarForm(car) {
     <div class="car-card">
       <div class="car-form">
         <input id="car-make" value="${car.make_model}" placeholder="${t('carMake', lang)}" />
-        <input id="car-reg" value="${car.registration}" placeholder="${t('carReg', lang)}" />
-        <input id="car-seats" type="number" value="${car.seats}" min="1" max="8" placeholder="${t('carSeats', lang)}" />
+        <input id="car-reg" value="${car.registration || ''}" placeholder="${t('carReg', lang)}" />
+        <input id="car-seats" type="number" value="${car.seats}" min="1" max="8" />
         <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.75rem;color:var(--muted);cursor:pointer">
           <input type="checkbox" id="car-avail" ${car.available ? 'checked' : ''} style="accent-color:var(--gold)" />
           ${t('carAvailable', lang)}
         </label>
-        <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+        <div style="display:flex;gap:0.75rem">
           <button class="btn-rsvp" onclick="saveCar('${car.id}')">${t('carSave', lang)}</button>
           <button class="btn-rsvp secondary" onclick="loadCarSection()">Cancel</button>
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
 async function saveCar(existingId) {
@@ -520,9 +507,7 @@ async function saveCar(existingId) {
     await db.from('cars').insert(payload);
   }
 
-  // Also update has_car on member
   await db.from('members').update({ has_car: true }).eq('id', currentMember.id);
-
   loadCarSection();
 }
 
@@ -532,76 +517,41 @@ async function removeCar(id) {
   loadCarSection();
 }
 
-// =============================================
-// LANGUAGE TOGGLE
-// =============================================
-
-function toggleLanguage() {
-  lang = lang === 'Eng' ? 'Afr' : 'Eng';
-  document.getElementById('lang-toggle').textContent = lang === 'Eng' ? 'EN' : 'AF';
-
-  // Save preference
-  if (currentMember) {
-    sessionStorage.setItem('hwkv_lang_override', lang);
-  }
-
-  // Refresh all sections
-  document.getElementById('section-messages-title').textContent = t('sectionMessages', lang);
-  document.getElementById('section-tastings-title').textContent = t('sectionTastings', lang);
-  document.getElementById('section-history-title').textContent = t('sectionHistory', lang);
-  document.getElementById('section-car-title').textContent = t('sectionCar', lang);
-  if (document.getElementById('section-nominations-title')) document.getElementById('section-nominations-title').textContent = t('sectionNominations', lang);
-  document.getElementById('member-greeting').textContent = t('greeting', lang, currentMember.first_name);
-
-  loadMessages();
-  loadTastings();
-  loadHistory();
-  loadNominations();
-  loadCarSection();
-}
-
-// =============================================
-// NOMINATIONS
-// =============================================
+// ---- NOMINATIONS ----
 
 async function loadNominations() {
   const container = document.getElementById('nominations-content');
   if (!container) return;
 
-  document.getElementById('section-nominations-title').textContent = t('sectionNominations', lang);
+  const titleEl = document.getElementById('section-nominations-title');
+  if (titleEl) titleEl.textContent = t('sectionNominations', lang);
 
-  // Get settings
   const { data: settings } = await db.from('settings').select('key, value');
   const deadline = settings?.find(s => s.key === 'nomination_deadline')?.value;
   const isOpen = settings?.find(s => s.key === 'nominations_open')?.value !== 'false';
 
-  // Check if member already nominated
-  const { data: existing } = await db
-    .from('nominations')
-    .select('*')
-    .eq('nominated_by', currentMember.id)
-    .single();
+  const { data: nominations } = await db.from('nominations').select('*').eq('nominated_by', currentMember.id);
+  const existing = nominations && nominations.length > 0 ? nominations[0] : null;
 
   let html = '';
 
-  // Deadline display
   if (deadline && new Date(deadline) > new Date()) {
     const d = new Date(deadline);
     const diff = d - new Date();
     const days = Math.floor(diff / 86400000);
     const hours = Math.floor((diff % 86400000) / 3600000);
-    const timeLeft = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
-    html += `<div style="font-size:0.7rem;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem">
-      <span style="color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;font-size:0.55rem">${t('nominationDeadline', lang)}</span>
-      <span>${d.toLocaleDateString(lang === 'Afr' ? 'af-ZA' : 'en-ZA', {day:'numeric',month:'long',year:'numeric'})} ${d.toLocaleTimeString(lang === 'Afr' ? 'af-ZA' : 'en-ZA', {hour:'2-digit',minute:'2-digit'})}</span>
-      <span style="color:var(--gold);font-size:0.65rem">(${timeLeft} ${lang === 'Afr' ? 'oor' : 'remaining'})</span>
-    </div>`;
+    const timeLeft = days > 0 ? days + 'd ' + hours + 'h' : hours + 'h';
+    html += '<div style="font-size:0.7rem;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">'
+      + '<span style="color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;font-size:0.55rem">' + t('nominationDeadline', lang) + '</span>'
+      + '<span>' + d.toLocaleDateString(lang === 'Afr' ? 'af-ZA' : 'en-ZA', {day:'numeric',month:'long',year:'numeric'}) + ' ' + d.toLocaleTimeString(lang === 'Afr' ? 'af-ZA' : 'en-ZA', {hour:'2-digit',minute:'2-digit'}) + '</span>'
+      + '<span style="color:var(--gold-dim);font-size:0.65rem">(' + timeLeft + ' ' + (lang === 'Afr' ? 'oor' : 'remaining') + ')</span>'
+      + '</div>';
   } else if (deadline && new Date(deadline) <= new Date()) {
-    html += `<div style="font-size:0.65rem;color:#c0605a;margin-bottom:1rem;letter-spacing:0.05em">${lang === 'Afr' ? 'Nominasie-sperdatum het verloop.' : 'Nomination deadline has passed.'}</div>`;
+    html += '<div style="font-size:0.65rem;color:#c0605a;margin-bottom:1rem">' + (lang === 'Afr' ? 'Nominasie-sperdatum het verloop.' : 'Nomination deadline has passed.') + '</div>';
   }
 
   if (!isOpen) {
-    html += `<p style="color:var(--muted);font-size:0.8rem">${t('nominationClosed', lang)}</p>`;
+    html += '<p style="color:var(--muted);font-size:0.8rem">' + t('nominationClosed', lang) + '</p>';
     container.innerHTML = html;
     return;
   }
@@ -609,20 +559,16 @@ async function loadNominations() {
   if (existing && existing.status !== 'denied') {
     const statusColor = existing.status === 'approved' ? '#6bbf80' : 'var(--muted)';
     const statusText = existing.status === 'approved' ? t('nominationApproved', lang) : t('nominationPending', lang);
-    html += `
-      <div class="message-card">
-        <div class="message-title">${existing.first_name} ${existing.surname}</div>
-        <div style="margin-top:0.75rem;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:${statusColor}">${statusText}</div>
-      </div>`;
+    html += '<div class="message-card">'
+      + '<div class="message-title">' + existing.first_name + ' ' + existing.surname + '</div>'
+      + '<div style="margin-top:0.75rem;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:' + statusColor + '">' + statusText + '</div>'
+      + '</div>';
   } else if (currentMember.member_type === 'Founding Member' || currentMember.member_type === 'Owner') {
-    if (existing?.status === 'denied') {
-      html += `<div style="font-size:0.72rem;color:#c0605a;margin-bottom:0.75rem">${lang === 'Afr' ? 'U vorige nominasie is nie goedgekeur nie. U kan n nuwe een indien.' : 'Your previous nomination was not approved. You may submit a new one.'}</div>`;
+    if (existing && existing.status === 'denied') {
+      html += '<div style="font-size:0.72rem;color:#c0605a;margin-bottom:0.75rem">' + (lang === 'Afr' ? 'U vorige nominasie is nie goedgekeur nie. U kan n nuwe een indien.' : 'Your previous nomination was not approved. You may submit a new one.') + '</div>';
     }
-    html += `
-      <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">${t('nominationRight', lang)}</p>
-      <div id="nom-form-container">
-        <button class="btn-rsvp" onclick="showNomForm()">${t('nominateBtn', lang)}</button>
-      </div>`;
+    html += '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">' + t('nominationRight', lang) + '</p>'
+      + '<div id="nom-form-container"><button class="btn-rsvp" onclick="showNomForm()">' + t('nominateBtn', lang) + '</button></div>';
   }
 
   container.innerHTML = html;
@@ -634,21 +580,20 @@ function showNomForm() {
       <div class="car-form">
         <input id="nom-firstname" placeholder="${t('nomFirstName', lang)}" />
         <input id="nom-surname" placeholder="${t('nomSurname', lang)}" />
-        <input id="nom-room" placeholder="${t('nomRoom', lang)}" />
-        <textarea id="nom-motivation" placeholder="${t('nomMotivation', lang)}" style="background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--white);font-family:var(--font-sans);font-size:0.85rem;padding:0.5rem 0;outline:none;resize:vertical;min-height:120px;width:100%"></textarea>
-        <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+        <input id="nom-email" type="email" placeholder="${lang === 'Afr' ? 'E-posadres' : 'Email Address'}" />
+        <textarea id="nom-motivation" placeholder="${t('nomMotivation', lang)}" style="min-height:120px"></textarea>
+        <div style="display:flex;gap:0.75rem">
           <button class="btn-rsvp" onclick="submitNomination()">${t('nomSubmit', lang)}</button>
           <button class="btn-rsvp secondary" onclick="loadNominations()">${t('nomCancel', lang)}</button>
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
 async function submitNomination() {
   const firstName = document.getElementById('nom-firstname').value.trim();
   const surname = document.getElementById('nom-surname').value.trim();
-  const room = document.getElementById('nom-room').value.trim();
+  const email = document.getElementById('nom-email').value.trim();
   const motivation = document.getElementById('nom-motivation').value.trim();
 
   if (!firstName || !surname || !motivation) {
@@ -660,7 +605,7 @@ async function submitNomination() {
     nominated_by: currentMember.id,
     first_name: firstName,
     surname: surname,
-    room: room || null,
+    email: email || null,
     motivation: motivation,
     status: 'pending'
   });
@@ -668,14 +613,16 @@ async function submitNomination() {
   if (!error) loadNominations();
 }
 
+// ---- SHOW MORE TASTINGS ----
+
 async function loadMoreTastings() {
   const container = document.getElementById('tastings-list');
   const btn = document.getElementById('show-more-btn');
-  if (btn) btn.remove();
+  if (btn) btn.parentElement.remove();
 
   const { data: more } = await db
     .from('tastings')
-    .select('*, tasting_fee, levy')
+    .select('*')
     .neq('status', 'completed')
     .order('number', { ascending: true });
 
@@ -685,7 +632,6 @@ async function loadMoreTastings() {
   const { data: myRsvps } = await db.from('rsvps').select('*').eq('member_id', currentMember.id).in('tasting_id', tastingIds);
   const { data: rsvpCounts } = await db.from('rsvps').select('tasting_id, status').in('tasting_id', tastingIds).eq('status', 'confirmed');
 
-  // Remove show more div and re-render all
   container.innerHTML = more.map(tasting => {
     const myRsvp = myRsvps?.find(r => r.tasting_id === tasting.id);
     const confirmedCount = rsvpCounts?.filter(r => r.tasting_id === tasting.id).length || 0;
@@ -698,4 +644,42 @@ async function loadMoreTastings() {
       startTimer(tasting.id, tasting.rsvp_opens_at);
     }
   });
+}
+
+
+// ---- CHANGE PASSWORD ----
+
+async function changePassword() {
+  const newPass = document.getElementById('new-password').value;
+  const confirmPass = document.getElementById('confirm-password').value;
+  const msg = document.getElementById('password-msg');
+
+  if (!newPass || newPass.length < 6) {
+    msg.style.color = '#e05a4e';
+    msg.textContent = lang === 'Afr' ? 'Wagwoord moet minstens 6 karakters wees.' : 'Password must be at least 6 characters.';
+    return;
+  }
+
+  if (newPass !== confirmPass) {
+    msg.style.color = '#e05a4e';
+    msg.textContent = lang === 'Afr' ? 'Wagwoorde stem nie ooreen nie.' : 'Passwords do not match.';
+    return;
+  }
+
+  const { error } = await db.from('members').update({ password: newPass }).eq('id', currentMember.id);
+
+  if (error) {
+    msg.style.color = '#e05a4e';
+    msg.textContent = 'Error updating password.';
+    return;
+  }
+
+  // Update session
+  currentMember.password = newPass;
+  sessionStorage.setItem('hwkv_member', JSON.stringify(currentMember));
+
+  msg.style.color = '#6bbf80';
+  msg.textContent = lang === 'Afr' ? 'Wagwoord suksesvol opgedateer.' : 'Password updated successfully.';
+  document.getElementById('new-password').value = '';
+  document.getElementById('confirm-password').value = '';
 }
