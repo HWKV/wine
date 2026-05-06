@@ -202,10 +202,10 @@ async function loadAdminTastings() {
           <span class="badge-small ${t.status === 'open' ? 'green' : t.status === 'completed' ? '' : 'gold'}">${t.status}</span>
           <button class="btn-admin" onclick="openEditTasting('${t.id}')">Edit</button>
           <button class="btn-admin danger" onclick="deleteTasting('${t.id}')">Delete</button>
-          <button class="btn-admin danger" onclick="deleteTasting('${t.id}')">Delete</button>
           <button class="btn-admin" onclick="toggleTastingStatus('${t.id}', '${t.status}')">
             ${t.status === 'upcoming' ? 'Open RSVP' : t.status === 'open' ? 'Close RSVP' : 'Reopen'}
           </button>
+          ${t.status !== 'completed' ? `<button class="btn-admin primary" onclick="markTastingCompleted('${t.id}')">Mark Complete</button>` : `<button class="btn-admin" onclick="openBulkAttendees('${t.id}')">Add Attendees</button>`}
         </div>
       </div>
     </div>
@@ -232,8 +232,11 @@ async function openEditTasting(id) {
 function toLocalDatetimeValue(iso) {
   if (!iso) return '';
   const d = new Date(iso);
+  // Adjust for local timezone so form shows correct local time
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60000);
   const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${local.getFullYear()}-${pad(local.getMonth()+1)}-${pad(local.getDate())}T${pad(local.getHours())}:${pad(local.getMinutes())}`;
 }
 
 function tastingForm(t) {
@@ -271,12 +274,12 @@ async function saveTasting() {
   const payload = {
     number: parseInt(document.getElementById('ft-number').value),
     title: document.getElementById('ft-title').value,
-    tasting_date: document.getElementById('ft-date').value || null,
+    tasting_date: document.getElementById('ft-date').value ? new Date(document.getElementById('ft-date').value).toISOString() : null,
     location: document.getElementById('ft-location').value,
     capacity: parseInt(document.getElementById('ft-capacity').value) || 20,
     rsvp_method: document.getElementById('ft-method').value,
-    rsvp_opens_at: document.getElementById('ft-opens').value || null,
-    rsvp_closes_at: document.getElementById('ft-closes').value || null,
+    rsvp_opens_at: document.getElementById('ft-opens').value ? new Date(document.getElementById('ft-opens').value).toISOString() : null,
+    rsvp_closes_at: document.getElementById('ft-closes').value ? new Date(document.getElementById('ft-closes').value).toISOString() : null,
     message: document.getElementById('ft-message').value || null,
     tasting_fee: parseFloat(document.getElementById('ft-fee').value) || 0,
     levy: parseFloat(document.getElementById('ft-levy').value) || 0,
@@ -614,7 +617,8 @@ async function loadFinance() {
       <tbody>
         ${(rsvps || []).map(r => {
           const owed = r.sponsored ? 0 : totalPerMember;
-          const paid = r.amount_paid || 0;
+          // If payment_confirmed but no amount_paid set, treat as fully paid
+          const paid = r.amount_paid > 0 ? r.amount_paid : (r.payment_confirmed ? owed : 0);
           const outstanding = owed - paid;
           return `
             <tr>
@@ -1072,11 +1076,7 @@ async function clearDeadline() {
   loadAdminNominations();
 }
 
-async function deleteTasting(id) {
-  if (!confirm('Delete this tasting? This will also delete all RSVPs for it.')) return;
-  await db.from('tastings').delete().eq('id', id);
-  loadAdminTastings();
-}
+
 
 // =============================================
 // NOMINATIONS ADMIN
@@ -1163,18 +1163,46 @@ function approveNomination(id) {
 
 async function confirmApprove(id) {
   const code = document.getElementById('approve-code').value.trim().toUpperCase();
+  const memberType = document.getElementById('approve-type')?.value || 'General';
   const notes = document.getElementById('approve-notes').value;
   if (!code) { showToast('Please enter a member code'); return; }
 
+  // Get nomination details
+  const { data: nom } = await db.from('nominations').select('*, members(member_code)').eq('id', id).single();
+  if (!nom) { showToast('Nomination not found'); return; }
+
+  // Update nomination status
   await db.from('nominations').update({
     status: 'approved',
     member_code_assigned: code,
+    member_type_assigned: memberType,
     admin_notes: notes || null
   }).eq('id', id);
 
+  // Create member record
+  const { error: memberError } = await db.from('members').insert({
+    first_name: nom.first_name,
+    surname: nom.surname,
+    room: nom.room || null,
+    email: nom.email || null,
+    member_code: code,
+    member_type: memberType,
+    nominated_by: nom.members?.member_code || null,
+    membership_accepted: false,
+    membership_paid: false,
+    language: 'Eng',
+    active: true,
+    password: 'HWKV2026'
+  });
+
+  if (memberError) {
+    showToast('Nomination approved but member creation failed: ' + memberError.message);
+  } else {
+    showToast('Approved — member ' + code + ' created');
+  }
+
   closeModal();
   loadAdminNominations();
-  showToast('Nomination approved');
 }
 
 function denyNomination(id) {
@@ -1248,6 +1276,12 @@ async function markTastingCompleted(id) {
   await db.from('tastings').update({ status: 'completed' }).eq('id', id);
   loadAdminTastings();
   showToast('Tasting marked as completed');
+  // Offer to add past attendees
+  setTimeout(() => {
+    if (confirm('Would you like to add attendees for this tasting now?')) {
+      openBulkAttendees(id);
+    }
+  }, 500);
 }
 
 // ---- MANUAL RSVP ----
@@ -1294,4 +1328,71 @@ async function saveManualRsvp(tastingId) {
   closeModal();
   loadRsvps();
   showToast('RSVP added');
+}
+
+// =============================================
+// BULK ADD PAST TASTING ATTENDEES
+// =============================================
+
+function openBulkAttendees(tastingId) {
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Add Past Attendees</div>
+    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">Enter member codes separated by commas or new lines. All will be added as confirmed + payment confirmed.</p>
+    <div class="form-group">
+      <label>Member Codes</label>
+      <textarea id="bulk-codes" style="min-height:120px" placeholder="PRIMUM-CMP-0, PRIMUM-LAC-0&#10;PRIMUM-HVH-9V"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-admin" onclick="closeModal()">Cancel</button>
+      <button class="btn-admin primary" onclick="saveBulkAttendees('${tastingId}')">Add All</button>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+async function saveBulkAttendees(tastingId) {
+  const raw = document.getElementById('bulk-codes').value;
+  const codes = raw.split(/[\n,]+/).map(c => c.trim().toUpperCase()).filter(Boolean);
+
+  if (codes.length === 0) { showToast('No codes entered'); return; }
+
+  let added = 0, failed = 0;
+
+  for (const code of codes) {
+    const { data: member } = await db.from('members').select('id').eq('member_code', code).single();
+    if (!member) { failed++; continue; }
+
+    await db.from('rsvps').upsert({
+      member_id: member.id,
+      tasting_id: tastingId,
+      status: 'confirmed',
+      payment_confirmed: true
+    }, { onConflict: 'member_id,tasting_id' });
+    added++;
+  }
+
+  closeModal();
+  showToast(`Added ${added} attendees${failed > 0 ? ', ' + failed + ' not found' : ''}`);
+  loadRsvps();
+}
+
+// =============================================
+// NOMINATION PERIODS
+// =============================================
+// Each period allows each eligible member to submit 1 nomination
+// Stored as a counter in settings: nomination_period_count
+
+async function openNewNominationPeriod() {
+  if (!confirm('Open a new nomination period? Each founding member can nominate 1 new person.')) return;
+
+  // Increment period count
+  const { data: current } = await db.from('settings').select('value').eq('key', 'nomination_period').single();
+  const newPeriod = parseInt(current?.value || '0') + 1;
+
+  await db.from('settings').upsert({ key: 'nomination_period', value: String(newPeriod) });
+  await db.from('settings').upsert({ key: 'nominations_open', value: 'true' });
+  await db.from('settings').upsert({ key: 'nomination_deadline', value: null });
+
+  showToast('New nomination period ' + newPeriod + ' opened');
+  loadAdminNominations();
 }
