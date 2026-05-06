@@ -70,7 +70,7 @@ async function loadMembers() {
       <tbody>
         ${data.map(m => `
           <tr>
-            <td style="color:var(--muted)">${m.number || '—'}</td>
+            <td style="color:var(--muted)">${m.number || (data.indexOf(m)+1)}</td>
             <td>${m.first_name} ${m.surname || ''}</td>
             <td style="font-size:0.65rem;letter-spacing:0.05em;color:var(--gold)">${m.member_code}</td>
             <td><span class="badge-small ${m.member_type === 'Founding Member' ? 'gold' : ''}">${m.member_type}</span></td>
@@ -133,6 +133,7 @@ function memberForm(m) {
       </select>
     </div>
     <div class="form-group"><label>Email</label><input id="fm-email" type="email" value="${m?.email || ''}" placeholder="studentnr@sun.ac.za" /></div>
+    <div class="form-group"><label>Password (leave blank to keep current)</label><input id="fm-password" type="text" placeholder="HWKV2026" /></div>
     <div class="form-group"><label>Nominated By (code)</label><input id="fm-nominated" value="${m?.nominated_by || ''}" /></div>
     <div class="form-group" style="flex-direction:row;gap:1rem;align-items:center">
       <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer">
@@ -162,6 +163,7 @@ async function saveMember() {
     member_code: document.getElementById('fm-code').value.toUpperCase(),
     member_type: document.getElementById('fm-type').value,
     email: document.getElementById('fm-email').value || null,
+    ...(document.getElementById('fm-password').value ? { password: document.getElementById('fm-password').value } : {}),
     nominated_by: document.getElementById('fm-nominated').value || null,
     membership_accepted: document.getElementById('fm-accepted').checked,
     membership_paid: document.getElementById('fm-paid').checked,
@@ -529,6 +531,10 @@ async function loadFinance() {
 
   calcBtn.style.display = 'inline-block';
   calcBtn.onclick = () => calculateAmounts(tastingId);
+
+  document.getElementById('finance-summary').style.padding = '0';
+  document.getElementById('finance-drivers').style.padding = '0';
+  document.getElementById('finance-members').style.padding = '0';
 
   // Load tasting
   const { data: tasting } = await db.from('tastings').select('*').eq('id', tastingId).single();
@@ -1118,7 +1124,6 @@ async function loadAdminNominations() {
                       <button class="btn-admin primary" onclick="approveNomination('${n.id}')">Approve</button>
                       <button class="btn-admin danger" onclick="denyNomination('${n.id}')">Deny</button>
                     ` : ''}
-                    <button class="btn-admin danger" onclick="deleteNomination('${n.id}')">Delete</button>
                   </div>
                 </td>
               </tr>
@@ -1230,11 +1235,4 @@ async function saveNominationSettings() {
   closeModal();
   loadAdminNominations();
   showToast('Settings saved');
-}
-
-async function deleteNomination(id) {
-  if (!confirm('Delete this nomination?')) return;
-  await db.from('nominations').delete().eq('id', id);
-  loadAdminNominations();
-  showToast('Nomination deleted');
 }

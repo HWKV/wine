@@ -40,7 +40,9 @@
 }
 
 .tab-content { display: none; }
-.tab-content.active { display: block; }
+.tab-content.active { display: block; padding: 0; }
+
+.tab-inner { padding: 0 0.25rem; }
 
 .admin-section-header {
   display: flex;
