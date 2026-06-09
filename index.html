@@ -1,55 +1,130 @@
 <!DOCTYPE html>
-<html lang="af">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HWKV</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
 </head>
 <body>
 
   <!-- LOGIN SCREEN -->
-  <div id="loginScreen" class="login-screen active">
-    <div class="login-card">
-      <div class="logo-mark">HWKV</div>
-      <p class="login-subtitle" data-en="Enter your member code" data-afr="Voer jou ledekode in">Voer jou ledekode in</p>
-      <input type="text" id="memberCode" placeholder="bv. PRIM-LAC-0" autocomplete="off" autocapitalize="characters">
-      <p id="loginError" class="error-text"></p>
-      <button id="loginBtn" class="btn-primary" data-en="Enter" data-afr="Toegang">Toegang</button>
+  <div id="login-screen" class="screen active">
+    <div class="login-container">
+      <div class="logo-block">
+        <div class="hwkv-mark">HWKV</div>
+        <div class="society-name">Helshoogte Wine Culture Society</div>
+        <div class="society-tagline">PRIMUM XXII</div>
+      </div>
+      <div class="login-form">
+        <p id="login-label" class="login-instruction">Membership Code</p>
+        <input type="text" id="code-input" placeholder="PRIMUM-XXX-0" autocomplete="off" autocapitalize="characters" />
+        <input type="password" id="password-input" placeholder="Password" autocomplete="current-password" style="margin-top:0.5rem" />
+        <div id="login-error" class="error-msg hidden">Code or password not recognised.</div>
+        <button id="login-btn" onclick="handleLogin()">Enter Society</button>
+      </div>
+      <div class="primum-tag">PRIMUM XXII</div>
     </div>
   </div>
 
-  <!-- PORTAL SCREEN -->
-  <div id="portalScreen" class="portal-screen">
-    <header class="portal-header">
-      <div class="logo-mark small">HWKV</div>
-      <div class="member-info">
-        <span id="memberName"></span>
-        <span id="memberCodeDisplay" class="member-code-badge"></span>
+  <!-- MEMBER PORTAL -->
+  <div id="portal-screen" class="screen">
+
+    <header>
+      <div class="header-inner">
+        <span class="hwkv-mark small">HWKV</span>
+        <span id="member-greeting" class="greeting"></span>
+        <div style="display:flex;align-items:center;gap:0.75rem">
+          <button id="lang-toggle" class="logout-btn" onclick="toggleLanguage()" style="font-size:0.6rem;letter-spacing:0.1em;border:1px solid var(--border);padding:0.3rem 0.6rem;border-radius:0">EN</button>
+          <button class="logout-btn" onclick="logout()">↩</button>
+        </div>
       </div>
     </header>
 
-    <main class="portal-main">
+    <main>
 
-      <!-- MESSAGES -->
-      <section class="portal-section">
-        <h2 class="section-title" data-en="Messages" data-afr="Boodskappe">Boodskappe</h2>
-        <div id="messagesContainer"></div>
+      <!-- MESSAGES SECTION -->
+      <section id="messages-section">
+        <h2 id="section-messages-title">From the Secretariat</h2>
+        <div id="messages-list" class="messages-list"></div>
       </section>
 
-      <!-- POLLS / AVAILABILITY -->
-      <section class="portal-section" id="pollsSection" style="display:none">
-        <h2 class="section-title" data-en="Availability" data-afr="Beskikbaarheid">Beskikbaarheid</h2>
-        <div id="pollsContainer"></div>
+      <div class="divider"></div>
+
+      <!-- POLLS SECTION -->
+      <section id="polls-section" style="display:none">
+        <h2 id="section-polls-title">Availability</h2>
+        <div id="polls-list" class="tastings-list"></div>
       </section>
 
-      <!-- TASTINGS -->
-      <section class="portal-section">
-        <h2 class="section-title" data-en="Upcoming Tastings" data-afr="Aanstaande Proeë">Aanstaande Proeë</h2>
-        <div id="tastingsContainer"></div>
+      <div class="divider" id="polls-divider" style="display:none"></div>
+
+      <!-- TASTINGS SECTION -->
+      <section id="tastings-section">
+        <h2 id="section-tastings-title">Tastings</h2>
+        <div id="tastings-list" class="tastings-list"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- PAST TASTINGS SECTION -->
+      <section id="history-section">
+        <h2 id="section-history-title">Your History</h2>
+        <div id="history-list" class="tastings-list"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- NOMINATIONS SECTION -->
+      <section id="nominations-section">
+        <h2 id="section-nominations-title">Nominations</h2>
+        <div id="nominations-content"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- CAR SECTION -->
+      <section id="car-section">
+        <h2 id="section-car-title">Transport</h2>
+        <div id="car-content"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- MEMBERSHIP SECTION -->
+      <section id="membership-section">
+        <h2 id="section-membership-title">Membership</h2>
+        <div id="membership-content"></div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ACCOUNT SECTION -->
+      <section id="account-section">
+        <h2>Account</h2>
+        <div id="account-content">
+          <div class="car-card">
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Change your password</p>
+            <div class="car-form">
+              <input type="password" id="new-password" placeholder="New password" />
+              <input type="password" id="confirm-password" placeholder="Confirm new password" />
+              <button class="btn-rsvp" style="align-self:flex-start" onclick="changePassword()">Update Password</button>
+              <div id="password-msg" style="font-size:0.75rem;color:var(--muted)"></div>
+            </div>
+          </div>
+        </div>
       </section>
 
     </main>
+
+    <footer>
+      <span class="footer-tag" id="footer-tag">HWKV · MMXXVI</span>
+    </footer>
+
   </div>
 
   <script src="js/config.js"></script>
