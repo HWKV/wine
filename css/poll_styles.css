@@ -1,0 +1,95 @@
+/* ── POLL STYLES (member portal) ── */
+
+#pollsSection {
+  margin-bottom: 2rem;
+}
+
+.poll-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.poll-card h3 {
+  margin: 0 0 0.5rem;
+  color: var(--gold);
+  font-size: 1rem;
+}
+
+.poll-body {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin-bottom: 0.8rem;
+}
+
+.poll-options {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.8rem;
+}
+
+.poll-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  transition: all 0.15s ease;
+}
+
+.poll-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.poll-btn-active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #111;
+  font-weight: 600;
+}
+
+.poll-thanks {
+  margin-top: 0.6rem;
+  font-size: 0.82rem;
+  color: var(--gold);
+  opacity: 0.8;
+}
+
+/* ── POLL STYLES (admin) ── */
+
+.poll-count {
+  font-weight: 600;
+}
+.yes-count { color: #5cb85c; }
+.maybe-count { color: #f0ad4e; }
+.no-count { color: #d9534f; }
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.status-badge.active { background: rgba(92,184,92,0.15); color: #5cb85c; }
+.status-badge.inactive { background: rgba(150,150,150,0.1); color: #888; }
+
+.poll-detail-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.2rem;
+  margin-top: 1rem;
+}
+
+.poll-detail-row {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
